@@ -19,6 +19,9 @@ class Boss:
     DASH_COOLDOWN = 0.0
     # RAGE
     RAGE_PERCENTAGE = 30
+    BOSS_HEALTH = 29
+    # PROJECTILE
+    PROJECTILE_COOLDOWN = 1.0
 
     def __init__(self, spawn_x, spawn_y, width, height):
         super().__init__()
@@ -47,8 +50,17 @@ class Boss:
         self.afterimages = []
 
         # HEALTH
-        self.health = 29
+        self.health = self.BOSS_HEALTH
         self.is_enraged = False
+
+        # PROJECTILE
+        self.last_proj_time = 0
+
+    def add_projectile(self, projectiles):
+        current_time = time.time()
+        if current_time - self.last_proj_time >= self.PROJECTILE_COOLDOWN:
+            projectiles.append(Projectile(self.rect.centerx + randint(-300, 300), self.rect.y, 60, 60))
+            self.last_proj_time = current_time
 
     def start_dash(self):
         current_time = time.time()
@@ -98,11 +110,13 @@ class Boss:
             if time.time() >= self.attack_end_time:
                 self.is_attacking = False
 
-    def move_to_player(self, player):
+    def move_to_player(self, player, projectiles):
         self.is_standing = False
 
         if self.health <= self.RAGE_PERCENTAGE:
+            self.add_projectile(projectiles)
             self.is_enraged = True
+            return
 
         if self.is_chasing and not self.is_attacking:
             distance_to_player = player.rect.centerx - self.rect.centerx
@@ -133,6 +147,8 @@ class Boss:
             sprite_sheet = "attack1"
         if self.is_standing:
             sprite_sheet = "idle"
+        if self.is_enraged:
+            sprite_sheet = "attack2"
 
         sprite_sheet_name = sprite_sheet + "_" + self.direction
         sprites = self.SPRITES[sprite_sheet_name]
@@ -141,10 +157,10 @@ class Boss:
         self.animation_count += 1
         self.update()
 
-    def loop(self, player):
+    def loop(self, player, projectiles):
         self.update_dash()
         self.update_attack()
-        self.move_to_player(player)
+        self.move_to_player(player, projectiles)
         self.update_sprite()
 
     def draw(self, win, offset_x, offset_y):
