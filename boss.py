@@ -21,7 +21,7 @@ class Boss:
     RAGE_PERCENTAGE = 30
     BOSS_HEALTH = 29
     # PROJECTILE
-    PROJECTILE_COOLDOWN = 1.0
+    PROJECTILE_COOLDOWN = 2.0
 
     def __init__(self, spawn_x, spawn_y, width, height):
         super().__init__()
@@ -59,7 +59,7 @@ class Boss:
     def add_projectile(self, projectiles):
         current_time = time.time()
         if current_time - self.last_proj_time >= self.PROJECTILE_COOLDOWN:
-            projectiles.append(Projectile(self.rect.centerx + randint(-300, 300), self.rect.y, 60, 60))
+            projectiles.append(Projectile(self.rect.centerx + randint(-500, 500), self.rect.centery - 50, 60, 60))
             self.last_proj_time = current_time
 
     def start_dash(self):
@@ -169,7 +169,7 @@ class Boss:
 
 
 class Projectile:
-    SPRITES = load_sprite_sheets("Boss", 66, 66, False, 1.0)
+    SPRITES = load_sprite_sheets("Boss", 64, 64, False, 1.0)
     ANIMATION_DELAY = 5
     PROJECTILE_VEL = 5
     TTL = 5.0
@@ -178,7 +178,7 @@ class Projectile:
         self.rect = pygame.Rect(spawn_x, spawn_y, width, height)
         self.mask = None
         self.animation_count = 0
-        self.sprite = self.SPRITES["fireball"][0]
+        self.sprite = self.SPRITES["spawn"][0]
         self.vel = self.PROJECTILE_VEL
         self.spawn_time = time.time()
 
@@ -186,7 +186,7 @@ class Projectile:
         self.mask = pygame.mask.from_surface(self.sprite)
 
     def update_sprite(self):
-        sprites = self.SPRITES["fireball"]
+        sprites = self.SPRITES["spawn"]
         sprite_index = (self.animation_count // self.ANIMATION_DELAY) % len(sprites)
         self.sprite = sprites[sprite_index]
         self.animation_count += 1

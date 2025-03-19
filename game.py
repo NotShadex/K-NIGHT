@@ -35,7 +35,6 @@ def update_all_methods(player, objects, boss, projectiles, fps):
     player.update_dash()
     player.loop(objects, boss, fps)
     boss.loop(player, projectiles)
-    print(projectiles)
     for proj in projectiles:
         proj.loop(player)
         if proj.is_expired():
