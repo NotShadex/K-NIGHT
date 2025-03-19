@@ -24,7 +24,8 @@ def draw(win, player, objects, boss, projectiles, offset_x, offset_y, bg0, bg1):
         obj.draw(win, offset_x, offset_y)
 
     player.draw(win, offset_x, offset_y)
-    projectiles.draw(win, offset_x, offset_y)
+    for proj in projectiles:
+        proj.draw(win, offset_x, offset_y)
     pygame.display.update()
 
 
@@ -33,8 +34,12 @@ def update_all_methods(player, objects, boss, projectiles, fps):
     player.update_attack()
     player.update_dash()
     player.loop(objects, boss, fps)
-    boss.loop(player)
-    projectiles.loop(player)
+    boss.loop(player, projectiles)
+    print(projectiles)
+    for proj in projectiles:
+        proj.loop(player)
+        if proj.is_expired():
+            projectiles.remove(proj)
 
 
 def main(window):
@@ -54,7 +59,7 @@ def main(window):
 
     # BOSS
     boss = Boss(BOSS_START_X, BOSS_START_Y, BOSS_WIDTH, BOSS_HEIGHT)
-    projectiles = Projectile(200, 840, 66, 66)
+    projectiles = []
 
     # OBJECTS & BLOCKS
     objects = OBJECTS
