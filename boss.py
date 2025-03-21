@@ -19,9 +19,9 @@ class Boss:
     DASH_COOLDOWN = 0.0
     # RAGE
     RAGE_PERCENTAGE = 30
-    BOSS_HEALTH = 29
+    BOSS_HEALTH = 100
     # PROJECTILE
-    PROJECTILE_COOLDOWN = 2.0
+    PROJECTILE_COOLDOWN = 2.5
 
     def __init__(self, spawn_x, spawn_y, width, height):
         super().__init__()
@@ -40,6 +40,7 @@ class Boss:
 
         # ATTACK
         self.is_attacking = False
+        self.is_attack_active = False
         self.attack_end_time = 0
         self.last_attack_time = 0
 
@@ -52,14 +53,37 @@ class Boss:
         # HEALTH
         self.health = self.BOSS_HEALTH
         self.is_enraged = False
+        self.is_invincible = False
+        self.invincible_end_time = 0
+        self.last_invincible_time = 0
 
         # PROJECTILE
         self.last_proj_time = 0
+
+    def start_inv(self, invincible_time=0.5):
+        current_time = time.time()
+        if not self.is_invincible and current_time - self.last_invincible_time >= 0.0:
+            self.is_invincible = True
+            self.invincible_end_time = current_time + invincible_time
+            self.last_invincible_time = current_time
+
+    def update_inv(self):
+        if self.is_invincible:
+            if time.time() >= self.invincible_end_time:
+                self.is_invincible = False
+
+    def is_hit(self, player):
+        if player.is_attacking and pygame.sprite.collide_mask(self, player):
+            if not self.is_invincible:
+                self.start_inv()
+                self.health -= 1
+        self.update_inv()
 
     def add_projectile(self, projectiles):
         current_time = time.time()
         if current_time - self.last_proj_time >= self.PROJECTILE_COOLDOWN:
             projectiles.append(Projectile(self.rect.centerx + randint(-500, 500), self.rect.centery - 50, 60, 60))
+            projectiles.append(Projectile(self.rect.centerx + randint(-300, 300), self.rect.centery - 50, 60, 60))
             self.last_proj_time = current_time
 
     def start_dash(self):
@@ -107,8 +131,14 @@ class Boss:
 
     def update_attack(self):
         if self.is_attacking:
+            attack_sprites = self.SPRITES[f"attack1_{self.direction}"]
+            current_frame = (self.animation_count // self.ANIMATION_DELAY) % len(attack_sprites)
+
+            self.is_attack_active = True if current_frame > 9 else False
+
             if time.time() >= self.attack_end_time:
                 self.is_attacking = False
+                self.is_attack_active = False
 
     def move_to_player(self, player, projectiles):
         self.is_standing = False
@@ -160,6 +190,7 @@ class Boss:
     def loop(self, player, projectiles):
         self.update_dash()
         self.update_attack()
+        self.is_hit(player)
         self.move_to_player(player, projectiles)
         self.update_sprite()
 
@@ -172,7 +203,7 @@ class Projectile:
     SPRITES = load_sprite_sheets("Boss", 64, 64, False, 1.0)
     ANIMATION_DELAY = 5
     PROJECTILE_VEL = 5
-    TTL = 5.0
+    TTL = 2.5
 
     def __init__(self, spawn_x, spawn_y, width, height):
         self.rect = pygame.Rect(spawn_x, spawn_y, width, height)
@@ -181,6 +212,7 @@ class Projectile:
         self.sprite = self.SPRITES["spawn"][0]
         self.vel = self.PROJECTILE_VEL
         self.spawn_time = time.time()
+        self.spawner = Spawner(spawn_x, spawn_y, width, height)
 
     def update(self):
         self.mask = pygame.mask.from_surface(self.sprite)
@@ -208,9 +240,28 @@ class Projectile:
     def loop(self, player):
         self.move_to_player(player)
         self.update_sprite()
+        self.spawner.update_sprite()
 
     def draw(self, win, offset_x, offset_y):
+        self.spawner.draw(win, offset_x, offset_y)
         win.blit(self.sprite, (self.rect.x - offset_x, self.rect.y - offset_y))
 
 
+class Spawner:
+    SPRITES = load_sprite_sheets("Boss", 64, 64, False, 1.0)
+    ANIMATION_DELAY = 5
 
+    def __init__(self, spawn_x, spawn_y, width, height):
+        self.rect = pygame.Rect(spawn_x, spawn_y, width, height)
+        self.animation_count = 0
+        self.sprite = self.SPRITES["spawner"][0]
+
+    def update_sprite(self):
+        sprites = self.SPRITES["spawner"]
+        sprite_index = (self.animation_count // self.ANIMATION_DELAY) % len(sprites)
+        if sprite_index < 14:
+            self.sprite = sprites[sprite_index]
+            self.animation_count += 1
+
+    def draw(self, win, offset_x, offset_y):
+        win.blit(self.sprite, (self.rect.x - offset_x, self.rect.y - offset_y))
