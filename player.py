@@ -21,8 +21,6 @@ class Player(pygame.sprite.Sprite):
     # PARRY CONSTANTS
     PARRY_TIME = 0.5
     PARRY_COOLDOWN = 5.0
-    # INVINCIBILTY
-    INVINCIBLE_TIME = 2
 
     def __init__(self, spawn_x, spawn_y, width, height):
         super().__init__()
@@ -76,11 +74,11 @@ class Player(pygame.sprite.Sprite):
         self.dead = False
 
     # PARRY, ATTACK, DASH
-    def start_inv(self):
+    def start_inv(self, invincible_time=2.0):
         current_time = time.time()
         if not self.is_invincible and current_time - self.last_invincible_time >= 0.0:
             self.is_invincible = True
-            self.invincible_end_time = current_time + self.INVINCIBLE_TIME
+            self.invincible_end_time = current_time + invincible_time
             self.last_invincible_time = current_time
 
     def update_inv(self):
@@ -89,14 +87,13 @@ class Player(pygame.sprite.Sprite):
                 self.is_invincible = False
 
     def is_hit(self, boss):
-        if boss.is_attacking and pygame.sprite.collide_mask(self, boss):
+        if boss.is_attacking and pygame.sprite.collide_mask(self, boss) and boss.is_attack_active:
             if not self.is_invincible:
                 self.start_inv()
                 self.health -= 1
 
         if self.health <= 0:
             self.dead = True
-        self.update_inv()
 
     def start_parry(self):
         if self.is_on_floor:
@@ -114,7 +111,7 @@ class Player(pygame.sprite.Sprite):
 
         if self.is_parrying:
             current_time = time.time()
-
+            self.start_inv(invincible_time=2)
             if self.parry_middle_start_time <= current_time < self.parry_end_start_time:
                 self.current_parry_sprite = "crouch"
             elif current_time >= self.parry_end_start_time:
@@ -146,6 +143,7 @@ class Player(pygame.sprite.Sprite):
 
     def update_attack(self):
         if self.is_attacking:
+            self.start_inv(invincible_time=0.5)
             if time.time() >= self.attack_end_time:
                 self.is_attacking = False
 
@@ -296,8 +294,10 @@ class Player(pygame.sprite.Sprite):
     def loop(self, objects, boss, fps):
         self.update()
         keys = pygame.key.get_pressed()
-        self.is_hit(boss)
         self.vel_x = 0
+
+        self.is_hit(boss)
+        self.update_inv()
 
         # OPPOSITE FORCE
         collide_left = self.handle_horizontal_collison(objects, -PLAYER_VEL * 2)
