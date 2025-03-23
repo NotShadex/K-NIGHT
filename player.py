@@ -1,6 +1,8 @@
+from random import randint
 from config import *
 from sprite_cutter import *
 import time
+from visual import *
 
 
 class Player(pygame.sprite.Sprite):
@@ -21,6 +23,8 @@ class Player(pygame.sprite.Sprite):
     # PARRY CONSTANTS
     PARRY_TIME = 0.5
     PARRY_COOLDOWN = 5.0
+    # HEALTH
+    MAX_HEALTH = 5
 
     def __init__(self, spawn_x, spawn_y, width, height):
         super().__init__()
@@ -70,11 +74,11 @@ class Player(pygame.sprite.Sprite):
         self.is_invincible = False
         self.invincible_end_time = 0
         self.last_invincible_time = 0
-        self.health = 5
+        self.health = self.MAX_HEALTH
         self.dead = False
 
     # PARRY, ATTACK, DASH
-    def start_inv(self, invincible_time=2.0):
+    def start_inv(self, invincible_time=1.0):
         current_time = time.time()
         if not self.is_invincible and current_time - self.last_invincible_time >= 0.0:
             self.is_invincible = True
@@ -89,6 +93,8 @@ class Player(pygame.sprite.Sprite):
     def is_hit(self, boss):
         if boss.is_attacking and pygame.sprite.collide_mask(self, boss) and boss.is_attack_active:
             if not self.is_invincible:
+                pygame.time.wait(100)
+                camera.trigger_shake(10)
                 self.start_inv()
                 self.health -= 1
 
@@ -143,7 +149,7 @@ class Player(pygame.sprite.Sprite):
 
     def update_attack(self):
         if self.is_attacking:
-            self.start_inv(invincible_time=0.5)
+            self.start_inv(invincible_time=0.28)
             if time.time() >= self.attack_end_time:
                 self.is_attacking = False
 
@@ -337,10 +343,9 @@ class Player(pygame.sprite.Sprite):
         self.update_sprite(fps)
 
     def draw(self, win, offset_x, offset_y):
-        """Handles the drawing of the player and the offset"""
-        # For dash afterimage
+        if self.is_invincible and randint(0, 1) == 1 and not self.is_attacking:
+            return
         self.draw_afterimage(win, offset_x, offset_y)
-        # Handles the drawing of the player itself!
         win.blit(self.sprite, (self.rect.x - offset_x, self.rect.y - offset_y))
 
 
