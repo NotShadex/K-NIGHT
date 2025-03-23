@@ -1,5 +1,5 @@
 from terrain import *
-
+from visual import *
 
 # GAME SETUP & CONST VALUES
 GAME_TITLE = "K-NIGHT"
@@ -8,8 +8,18 @@ FPS = 60
 PLAYER_VEL = 7
 
 # INITIALIZE
-WINDOW = pygame.display.set_mode((WIDTH, HEIGHT), )  # pygame.SCALED | pygame.FULLSCREEN
+WINDOW = pygame.display.set_mode((WIDTH, HEIGHT),)  # pygame.SCALED | pygame.FULLSCREEN
 pygame.display.set_caption(GAME_TITLE)
+
+# HEARTS
+heart_full = pygame.image.load("assets/GUI/full_heart.png").convert_alpha()
+heart_full = pygame.transform.scale2x(heart_full)
+NO_HEART = pygame.image.load("assets/GUI/no_heart.png").convert_alpha()
+NO_HEART = pygame.transform.scale2x(NO_HEART)
+HEARTS = [heart_full, NO_HEART]
+
+# SHAKE EFFECT
+camera = Shake()
 
 # SCROLL & OFFSET
 SCROLL_AREA_WIDTH = 250
