@@ -1,8 +1,7 @@
-import pygame.draw
 from config import *
 from sprite_cutter import *
 import time
-from random import *
+from random import randint
 
 
 class Boss:
@@ -19,9 +18,9 @@ class Boss:
     DASH_COOLDOWN = 0.0
     # RAGE
     RAGE_PERCENTAGE = 30
-    BOSS_HEALTH = 100
+    BOSS_HEALTH = 31
     # PROJECTILE
-    PROJECTILE_COOLDOWN = 2.5
+    PROJECTILE_COOLDOWN = 1.5
 
     def __init__(self, spawn_x, spawn_y, width, height):
         super().__init__()
@@ -75,6 +74,7 @@ class Boss:
     def is_hit(self, player):
         if player.is_attacking and pygame.sprite.collide_mask(self, player):
             if not self.is_invincible:
+                camera.trigger_shake(shake_intensity=2, duration=5)
                 self.start_inv()
                 self.health -= 1
         self.update_inv()
@@ -82,8 +82,8 @@ class Boss:
     def add_projectile(self, projectiles):
         current_time = time.time()
         if current_time - self.last_proj_time >= self.PROJECTILE_COOLDOWN:
-            projectiles.append(Projectile(self.rect.centerx + randint(-500, 500), self.rect.centery - 50, 60, 60))
-            projectiles.append(Projectile(self.rect.centerx + randint(-300, 300), self.rect.centery - 50, 60, 60))
+            projectiles.append(Projectile(self.rect.centerx + randint(-500, -50), self.rect.centery - 70, 60, 60))
+            projectiles.append(Projectile(self.rect.centerx + randint(50, 500), self.rect.centery - 70, 60, 60))
             self.last_proj_time = current_time
 
     def start_dash(self):
@@ -135,7 +135,8 @@ class Boss:
             current_frame = (self.animation_count // self.ANIMATION_DELAY) % len(attack_sprites)
 
             self.is_attack_active = True if current_frame > 9 else False
-
+            if self.is_attack_active:
+                camera.trigger_shake(shake_intensity=3, duration=2)
             if time.time() >= self.attack_end_time:
                 self.is_attacking = False
                 self.is_attack_active = False
@@ -143,10 +144,13 @@ class Boss:
     def move_to_player(self, player, projectiles):
         self.is_standing = False
 
-        if self.health <= self.RAGE_PERCENTAGE:
+        if 15 <= self.health <= self.RAGE_PERCENTAGE:
+            camera.trigger_shake(shake_intensity=3, duration=5)
             self.add_projectile(projectiles)
             self.is_enraged = True
             return
+        else:
+            self.is_enraged = False
 
         if self.is_chasing and not self.is_attacking:
             distance_to_player = player.rect.centerx - self.rect.centerx
@@ -159,9 +163,7 @@ class Boss:
                 self.rect.x += self.vel_x if not self.is_dashing else (self.vel_x * 10)
                 self.direction = "left"
             else:
-
                 self.start_attack(player)
-
                 if not self.is_attacking and not self.is_enraged:
                     self.is_standing = True
 
@@ -195,6 +197,10 @@ class Boss:
         self.update_sprite()
 
     def draw(self, win, offset_x, offset_y):
+        if self.is_invincible and randint(0, 1) == 1:
+            mask_surface = self.mask.to_surface(setcolor=(255, 0, 0, 255), unsetcolor=(0, 0, 0, 0))
+            win.blit(mask_surface, (self.rect.x - offset_x, self.rect.y - offset_y))
+            return
         self.draw_afterimage(win, offset_x, offset_y)
         win.blit(self.sprite, (self.rect.x - offset_x, self.rect.y - offset_y))
 
@@ -203,7 +209,8 @@ class Projectile:
     SPRITES = load_sprite_sheets("Boss", 64, 64, False, 1.0)
     ANIMATION_DELAY = 5
     PROJECTILE_VEL = 5
-    TTL = 2.5
+    TTL = 7.0
+    FOLLOW_TIME = 3.0
 
     def __init__(self, spawn_x, spawn_y, width, height):
         self.rect = pygame.Rect(spawn_x, spawn_y, width, height)
@@ -213,6 +220,8 @@ class Projectile:
         self.vel = self.PROJECTILE_VEL
         self.spawn_time = time.time()
         self.spawner = Spawner(spawn_x, spawn_y, width, height)
+        self.is_following = True
+        self.move_x, self.move_y = 0, 0
 
     def update(self):
         self.mask = pygame.mask.from_surface(self.sprite)
@@ -225,14 +234,25 @@ class Projectile:
         self.update()
 
     def move_to_player(self, player):
-        dx = player.rect.centerx - self.rect.centerx
-        dy = player.rect.centery - self.rect.centery
-        dist = max(1, (dx**2 + dy**2) ** 0.5)
+        if self.is_following:
+            dx = player.rect.centerx - self.rect.centerx
+            dy = player.rect.centery - self.rect.centery
 
-        if abs(dx) > self.vel:
-            self.rect.x += (dx / dist) * self.vel
-        if abs(dy) > self.vel:
-            self.rect.y += (dy / dist) * self.vel
+            dist = max(1, (dx**2 + dy**2) ** 0.5)
+
+            self.move_x = (dx / dist) * self.vel
+            self.move_y = (dy / dist) * self.vel
+
+            if abs(dx) > self.vel:
+                self.rect.x += (dx / dist) * self.vel
+            if abs(dy) > self.vel:
+                self.rect.y += (dy / dist) * self.vel
+
+            if time.time() - self.spawn_time >= self.FOLLOW_TIME:
+                self.is_following = False
+        else:
+            self.rect.x += self.move_x
+            self.rect.y += self.move_y
 
     def is_expired(self):
         return time.time() - self.spawn_time >= self.TTL
@@ -249,7 +269,7 @@ class Projectile:
 
 class Spawner:
     SPRITES = load_sprite_sheets("Boss", 64, 64, False, 1.0)
-    ANIMATION_DELAY = 5
+    ANIMATION_DELAY = 6
 
     def __init__(self, spawn_x, spawn_y, width, height):
         self.rect = pygame.Rect(spawn_x, spawn_y, width, height)
@@ -265,3 +285,40 @@ class Spawner:
 
     def draw(self, win, offset_x, offset_y):
         win.blit(self.sprite, (self.rect.x - offset_x, self.rect.y - offset_y))
+
+
+class Column:
+    SPRITES = load_sprite_sheets("Boss", 45, 90, False, 4.0)
+    ANIMATION_DELAY = 5
+    PROJECTILE_VEL = 5
+    TTL = 7.0
+    FOLLOW_TIME = 3.0
+
+    def __init__(self, spawn_x, spawn_y, width, height):
+        self.rect = pygame.Rect(spawn_x, spawn_y, width, height)
+        self.mask = None
+        self.animation_count = 0
+        self.sprite = self.SPRITES["column"][0]
+        self.spawn_time = time.time()
+        self.is_following = True
+        self.move_x, self.move_y = 0, 0
+
+    def update(self):
+        self.mask = pygame.mask.from_surface(self.sprite)
+
+    def update_sprite(self):
+        sprites = self.SPRITES["column"]
+        sprite_index = (self.animation_count // self.ANIMATION_DELAY) % len(sprites)
+        self.sprite = sprites[sprite_index]
+        self.animation_count += 1
+        self.update()
+
+    def is_expired(self):
+        return time.time() - self.spawn_time >= self.TTL
+
+    def loop(self):
+        self.update_sprite()
+
+    def draw(self, win, offset_x, offset_y):
+        win.blit(self.sprite, (self.rect.x - offset_x, self.rect.y - offset_y))
+
