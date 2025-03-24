@@ -11,7 +11,7 @@ class Boss:
     # VELOCITY
     BOSS_VEL = 3
     # ATTACK CONSTANTS
-    ATTACK_COOLDOWN = 0.0
+    ATTACK_COOLDOWN = 1.2
     ATTACK_TIME = 1.2
     # DASH CONSTANTS
     DASH_TIME = 1.0
@@ -116,14 +116,17 @@ class Boss:
             ghost.set_alpha(alpha)
             win.blit(ghost, (pos[0] - offset_x, pos[1] - offset_y))
 
-    def start_attack(self, player):
+    def start_attack(self, player, projectiles):
         current_time = time.time()
         if not self.is_attacking and current_time - self.last_attack_time >= self.ATTACK_COOLDOWN:
             if player.rect.centerx < self.rect.centerx:
                 self.direction = "right"
             else:
                 self.direction = "left"
-
+            if randint(0, 3) == 1:
+                projectiles.append(Projectile(self.rect.centerx, self.rect.centery - 70, 60, 60))
+            dir = -1 if self.direction == "right" else 1
+            projectiles.append(Column(player.rect.centerx, self.rect.y + 79, 45, 90))
             self.animation_count = 0
             self.is_attacking = True
             self.attack_end_time = current_time + self.ATTACK_TIME
@@ -163,8 +166,8 @@ class Boss:
                 self.rect.x += self.vel_x if not self.is_dashing else (self.vel_x * 10)
                 self.direction = "left"
             else:
-                self.start_attack(player)
                 if not self.is_attacking and not self.is_enraged:
+                    self.start_attack(player, projectiles)
                     self.is_standing = True
 
     def update(self):
@@ -215,6 +218,7 @@ class Projectile:
     def __init__(self, spawn_x, spawn_y, width, height):
         self.rect = pygame.Rect(spawn_x, spawn_y, width, height)
         self.mask = None
+        self.name = "fireball"
         self.animation_count = 0
         self.sprite = self.SPRITES["spawn"][0]
         self.vel = self.PROJECTILE_VEL
@@ -297,6 +301,7 @@ class Column:
     def __init__(self, spawn_x, spawn_y, width, height):
         self.rect = pygame.Rect(spawn_x, spawn_y, width, height)
         self.mask = None
+        self.name = "column"
         self.animation_count = 0
         self.sprite = self.SPRITES["column"][0]
         self.spawn_time = time.time()
