@@ -24,7 +24,7 @@ class Player(pygame.sprite.Sprite):
     PARRY_TIME = 0.5
     PARRY_COOLDOWN = 5.0
     # HEALTH
-    MAX_HEALTH = 5
+    MAX_HEALTH = 50
 
     def __init__(self, spawn_x, spawn_y, width, height):
         super().__init__()

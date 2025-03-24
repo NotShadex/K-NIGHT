@@ -54,7 +54,10 @@ def update_all_methods(player, objects, boss, projectiles, fps):
     player.loop(objects, boss, fps)
     boss.loop(player, projectiles)
     for proj in projectiles:
-        proj.loop(player)
+        if proj.name == "fireball":
+            proj.loop(player)
+        else:
+            proj.loop()
         if proj.is_expired():
             projectiles.remove(proj)
 
@@ -81,9 +84,6 @@ def main(window):
     boss = Boss(BOSS_START_X, BOSS_START_Y, BOSS_WIDTH, BOSS_HEIGHT)
     projectiles = []
 
-    # COLUMN
-    column = Column(0, -320, 45, 90)
-
     # OBJECTS & BLOCKS
     objects = OBJECTS
 
@@ -94,7 +94,7 @@ def main(window):
                 running = False
                 break
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE and player.jump_count < 1000:
+                if event.key == pygame.K_SPACE and player.jump_count < 10:
                     player.jump()
                 if event.key == pygame.K_LSHIFT:
                     player.start_dash()
@@ -111,8 +111,6 @@ def main(window):
             update_all_methods(player, objects, boss, projectiles, FPS)
         camera.update_shake()
         window.fill("white")
-        column.draw(window, offset_x, offset_y)
-        column.loop()
         draw(window, player, objects, boss, projectiles, hearts, offset_x, offset_y)
 
         # CLOCK
