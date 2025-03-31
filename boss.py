@@ -1,3 +1,5 @@
+import random
+
 from config import *
 from sprite_cutter import *
 import time
@@ -18,7 +20,7 @@ class Boss:
     DASH_COOLDOWN = 0.0
     # RAGE
     RAGE_PERCENTAGE = 30
-    BOSS_HEALTH = 31
+    BOSS_HEALTH = 1
     # PROJECTILE
     PROJECTILE_COOLDOWN = 1.5
 
@@ -55,9 +57,11 @@ class Boss:
         self.is_invincible = False
         self.invincible_end_time = 0
         self.last_invincible_time = 0
+        self.dead = False
 
-        # PROJECTILE
+        # PROJECTILE & COLUMN
         self.last_proj_time = 0
+        self.last_column_time = 0
 
     def start_inv(self, invincible_time=0.5):
         current_time = time.time()
@@ -77,6 +81,8 @@ class Boss:
                 camera.trigger_shake(shake_intensity=2, duration=5)
                 self.start_inv()
                 self.health -= 1
+        if self.health <= 0:
+            self.dead = True
         self.update_inv()
 
     def add_projectile(self, projectiles):
@@ -85,6 +91,17 @@ class Boss:
             projectiles.append(Projectile(self.rect.centerx + randint(-500, -50), self.rect.centery - 70, 60, 60))
             projectiles.append(Projectile(self.rect.centerx + randint(50, 500), self.rect.centery - 70, 60, 60))
             self.last_proj_time = current_time
+
+    def collumn_attack(self, projectiles):
+        current_time = time.time()
+        spacing = 300 if randint(0, 1) == 1 else 100
+        column_count = 5
+        if current_time - self.last_column_time >= 3.0:
+            start_x = self.rect.centerx - (column_count // 2) * spacing
+            for i in range(column_count):
+                column_x = start_x + i * spacing
+                projectiles.append(Column(column_x, self.rect.y + 79, 45, 90))
+            self.last_column_time = current_time
 
     def start_dash(self):
         current_time = time.time()
@@ -125,8 +142,7 @@ class Boss:
                 self.direction = "left"
             if randint(0, 3) == 1:
                 projectiles.append(Projectile(self.rect.centerx, self.rect.centery - 70, 60, 60))
-            dir = -1 if self.direction == "right" else 1
-            projectiles.append(Column(player.rect.centerx, self.rect.y + 79, 45, 90))
+            self.collumn_attack(projectiles)
             self.animation_count = 0
             self.is_attacking = True
             self.attack_end_time = current_time + self.ATTACK_TIME
@@ -154,7 +170,6 @@ class Boss:
             return
         else:
             self.is_enraged = False
-
         if self.is_chasing and not self.is_attacking:
             distance_to_player = player.rect.centerx - self.rect.centerx
             if abs(distance_to_player) > 500:
@@ -295,8 +310,8 @@ class Column:
     SPRITES = load_sprite_sheets("Boss", 45, 90, False, 4.0)
     ANIMATION_DELAY = 5
     PROJECTILE_VEL = 5
-    TTL = 7.0
-    FOLLOW_TIME = 3.0
+    TTL = 1.5
+    INDICATOR_TIME = 0.5
 
     def __init__(self, spawn_x, spawn_y, width, height):
         self.rect = pygame.Rect(spawn_x, spawn_y, width, height)
@@ -314,6 +329,9 @@ class Column:
     def update_sprite(self):
         sprites = self.SPRITES["column"]
         sprite_index = (self.animation_count // self.ANIMATION_DELAY) % len(sprites)
+
+        if time.time() - self.spawn_time <= self.INDICATOR_TIME:
+            return
         self.sprite = sprites[sprite_index]
         self.animation_count += 1
         self.update()
