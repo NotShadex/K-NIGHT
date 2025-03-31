@@ -24,7 +24,7 @@ class Player(pygame.sprite.Sprite):
     PARRY_TIME = 0.5
     PARRY_COOLDOWN = 5.0
     # HEALTH
-    MAX_HEALTH = 50
+    MAX_HEALTH = 5
 
     def __init__(self, spawn_x, spawn_y, width, height):
         super().__init__()
@@ -97,6 +97,8 @@ class Player(pygame.sprite.Sprite):
                 camera.trigger_shake(10)
                 self.start_inv()
                 self.health -= 1
+            if self.is_parrying:
+                self.health += 1
 
         if self.health <= 0:
             self.dead = True
@@ -343,7 +345,7 @@ class Player(pygame.sprite.Sprite):
         self.update_sprite(fps)
 
     def draw(self, win, offset_x, offset_y):
-        if self.is_invincible and randint(0, 1) == 1 and not self.is_attacking:
+        if self.is_invincible and randint(0, 1) == 1 and not self.is_attacking and not self.dead:
             return
         self.draw_afterimage(win, offset_x, offset_y)
         win.blit(self.sprite, (self.rect.x - offset_x, self.rect.y - offset_y))
