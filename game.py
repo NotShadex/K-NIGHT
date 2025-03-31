@@ -35,15 +35,22 @@ def draw_health_bar(win, player, images):
 
 def draw(win, player, objects, boss, projectiles, hearts, offset_x, offset_y):
     # backgrounds(win, bg0, bg1, offset_x, offset_y)
-    # Drawing objects
-    boss.draw(win, offset_x, offset_y)
-    for obj in objects:
-        obj.draw(win, offset_x, offset_y)
+    if not (player.dead or boss.dead):
+        boss.draw(win, offset_x, offset_y)
+        for obj in objects:
+            obj.draw(win, offset_x, offset_y)
 
-    player.draw(win, offset_x, offset_y)
-    for proj in projectiles:
-        proj.draw(win, offset_x, offset_y)
-    draw_health_bar(win, player, hearts)
+        player.draw(win, offset_x, offset_y)
+        for proj in projectiles:
+            proj.draw(win, offset_x, offset_y)
+        draw_health_bar(win, player, hearts)
+    else:
+        boss_mask = boss.mask.to_surface(setcolor=(255, 0, 0, 255), unsetcolor=(0, 0, 0, 0))
+        player_mask = player.mask.to_surface(setcolor=(130, 0, 0, 255), unsetcolor=(0, 0, 0, 0))
+        win.fill("black")
+        win.blit(boss_mask, (boss.rect.x - offset_x, boss.rect.y - offset_y))
+        win.blit(player_mask, (player.rect.x - offset_x, player.rect.y - offset_y))
+
     pygame.display.update()
 
 
@@ -105,9 +112,10 @@ def main(window):
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     quit()
-
+                if event.key == pygame.K_r:
+                    main(window)
         # PLAYER
-        if not player.dead:
+        if not (player.dead or boss.dead):
             update_all_methods(player, objects, boss, projectiles, FPS)
         camera.update_shake()
         window.fill("white")
