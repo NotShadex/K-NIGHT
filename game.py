@@ -58,11 +58,13 @@ def update_all_methods(player, objects, boss, projectiles, fps):
     player.update_parry()
     player.update_attack()
     player.update_dash()
-    player.loop(objects, boss, fps)
+    player.loop(objects, boss, projectiles, fps)
     boss.loop(player, projectiles)
     for proj in projectiles:
         if proj.name == "fireball":
             proj.loop(player)
+            if player.is_hit(boss, projectiles):
+                proj.is_following = False
         else:
             proj.loop()
         if proj.is_expired():
