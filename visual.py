@@ -1,4 +1,26 @@
 from random import randint
+import pygame.mixer
+import time
+
+
+def play_sound(sfx):
+    channel = pygame.mixer.find_channel()
+    if channel:
+        channel.play(sfx)
+
+
+class SoundTimer:
+    def __init__(self, cooldown_seconds):
+        self.cooldown = cooldown_seconds
+        self.last_played = 0
+
+    def play(self, sfx):
+        current_time = time.time()
+        if current_time - self.last_played >= self.cooldown:
+            sfx.play()
+            self.last_played = current_time
+            return True
+        return False
 
 
 class Shake:
