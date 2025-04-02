@@ -7,9 +7,13 @@ WIDTH, HEIGHT = 640, 360
 FPS = 60
 PLAYER_VEL = 7
 
-# INITIALIZE
+# INITIALIZE DISPLAY
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT),)  # pygame.SCALED | pygame.FULLSCREEN
 pygame.display.set_caption(GAME_TITLE)
+
+# INITIALIZE MIXER
+pygame.mixer.init()
+pygame.mixer.set_num_channels(16)
 
 # HEARTS
 heart_full = pygame.image.load("assets/GUI/full_heart.png").convert_alpha()
@@ -47,15 +51,25 @@ BOSS_START_Y = 81
 BOSS_WIDTH = 288
 BOSS_HEIGHT = 160
 
-"""
-# FLOOR
-FLOOR_BLOCKS = [i * BLOCK_SIZE for i in range(-WIDTH // BLOCK_SIZE, (WIDTH * 4) // BLOCK_SIZE)]
-FLOOR_Y = HEIGHT - BLOCK_SIZE
+# SOUND EFFECTS
+path = join("assets", "Sound Effects", "")
+DASH = pygame.mixer.Sound(path+"dash.wav")
+JUMP = pygame.mixer.Sound(path+"jump.wav")
+PARRY = pygame.mixer.Sound(path+"parry.wav")
+HIT1 = pygame.mixer.Sound(path+"hit1.wav")
+HIT2 = pygame.mixer.Sound(path+"hit2.wav")
+BOSS_ATK = pygame.mixer.Sound(path+"boss_atk.wav")
+SHRIEK = pygame.mixer.Sound(path+"shriek.wav")
+CAST = pygame.mixer.Sound(path+"cast.wav")
+EXPLOSION = pygame.mixer.Sound(path+"explosion.wav")
+HURT = pygame.mixer.Sound(path+"hurt.wav")
+COLUMN = pygame.mixer.Sound(path+"column.wav")
 
-# OBJECTS & BLOCKS
+# VOLUME SET
+SHRIEK.set_volume(0.3)
+HURT.set_volume(0.3)
+BOSS_ATK.set_volume(0.7)
+EXPLOSION.set_volume(0.5)
+CAST.set_volume(0.2)
+COLUMN.set_volume(0.2)
 
-OBJECTS = [
-    *[Block(x + 900, FLOOR_Y, BLOCK_SIZE) for x in FLOOR_BLOCKS[0:41]],
-    Block(100, 0, BLOCK_SIZE)
-]
-"""
