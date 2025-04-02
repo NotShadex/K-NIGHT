@@ -1,9 +1,8 @@
-import random
-
 from config import *
 from sprite_cutter import *
 import time
 from random import randint
+from visual import *
 
 
 class Boss:
@@ -20,7 +19,7 @@ class Boss:
     DASH_COOLDOWN = 0.0
     # RAGE
     RAGE_PERCENTAGE = 30
-    BOSS_HEALTH = 1
+    BOSS_HEALTH = 35
     # PROJECTILE
     PROJECTILE_COOLDOWN = 1.5
 
@@ -32,6 +31,7 @@ class Boss:
         self.direction = "left"
         self.animation_count = 0
         self.sprite = self.SPRITES["idle_right"][0]
+        self.shriek = SoundTimer(2)
 
         # MOVEMENT
         self.vel_x = self.BOSS_VEL
@@ -44,6 +44,7 @@ class Boss:
         self.is_attack_active = False
         self.attack_end_time = 0
         self.last_attack_time = 0
+        self.sound_played = True
 
         # DASH
         self.is_dashing = False
@@ -156,20 +157,28 @@ class Boss:
             self.is_attack_active = True if current_frame > 9 else False
             if self.is_attack_active:
                 camera.trigger_shake(shake_intensity=3, duration=2)
+
+            if current_frame == 9 and not self.sound_played:
+                BOSS_ATK.play()
+                self.sound_played = True
+
             if time.time() >= self.attack_end_time:
+                self.sound_played = False
                 self.is_attacking = False
                 self.is_attack_active = False
 
     def move_to_player(self, player, projectiles):
         self.is_standing = False
-
         if 15 <= self.health <= self.RAGE_PERCENTAGE:
             camera.trigger_shake(shake_intensity=3, duration=5)
             self.add_projectile(projectiles)
             self.is_enraged = True
+            self.shriek.play(SHRIEK)
+
             return
         else:
             self.is_enraged = False
+
         if self.is_chasing and not self.is_attacking:
             distance_to_player = player.rect.centerx - self.rect.centerx
             if abs(distance_to_player) > 500:
@@ -241,6 +250,7 @@ class Projectile:
         self.spawner = Spawner(spawn_x, spawn_y, width, height)
         self.is_following = True
         self.move_x, self.move_y = 0, 0
+        play_sound(CAST)
 
     def update(self):
         self.mask = pygame.mask.from_surface(self.sprite)
@@ -322,6 +332,7 @@ class Column:
         self.spawn_time = time.time()
         self.is_following = True
         self.move_x, self.move_y = 0, 0
+        self.sound = SoundTimer(1.5)
 
     def update(self):
         self.mask = pygame.mask.from_surface(self.sprite)
@@ -332,6 +343,7 @@ class Column:
 
         if time.time() - self.spawn_time <= self.INDICATOR_TIME:
             return
+        self.sound.play(COLUMN)
         self.sprite = sprites[sprite_index]
         self.animation_count += 1
         self.update()
@@ -344,4 +356,3 @@ class Column:
 
     def draw(self, win, offset_x, offset_y):
         win.blit(self.sprite, (self.rect.x - offset_x, self.rect.y - offset_y))
-
