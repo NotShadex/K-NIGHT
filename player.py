@@ -21,7 +21,7 @@ class Player(pygame.sprite.Sprite):
     ATTACK_TIME = 0.28
     COMBO_WINDOW = 1.0
     # PARRY CONSTANTS
-    PARRY_TIME = 0.5
+    PARRY_TIME = 1.0
     PARRY_COOLDOWN = 5.0
     # HEALTH
     MAX_HEALTH = 5
@@ -90,23 +90,39 @@ class Player(pygame.sprite.Sprite):
             if time.time() >= self.invincible_end_time:
                 self.is_invincible = False
 
-    def is_hit(self, boss):
+    def is_hit(self, boss, projectiles):
+        proj_hit_player = False
+
         if boss.is_attacking and pygame.sprite.collide_mask(self, boss) and boss.is_attack_active:
             if not self.is_invincible:
                 pygame.time.wait(100)
                 camera.trigger_shake(10)
                 self.start_inv()
                 self.health -= 1
+                HURT.play()
             if self.is_parrying:
                 self.health += 1
-
+        try:
+            for proj in projectiles:
+                if pygame.sprite.collide_mask(self, proj):
+                    if not self.is_invincible:
+                        proj_hit_player = True
+                        camera.trigger_shake(5)
+                        self.start_inv(invincible_time=2.0)
+                        self.health -= 1
+                        EXPLOSION.play()
+        except TypeError:
+            pass
         if self.health <= 0:
             self.dead = True
+
+        return proj_hit_player
 
     def start_parry(self):
         if self.is_on_floor:
             current_time = time.time()
             if not self.is_parrying and current_time - self.last_parry_time >= self.PARRY_COOLDOWN and not self.is_dashing and not self.is_attacking:
+                PARRY.play()
                 self.is_parrying = True
                 self.parry_end_time = current_time + self.PARRY_TIME
                 self.last_parry_time = current_time
@@ -116,7 +132,6 @@ class Player(pygame.sprite.Sprite):
                 self.parry_end_start_time = self.parry_end_time - 0.1
 
     def update_parry(self):
-
         if self.is_parrying:
             current_time = time.time()
             self.start_inv(invincible_time=2)
@@ -140,8 +155,10 @@ class Player(pygame.sprite.Sprite):
                 self.is_parrying = False
                 if current_time - self.combo_start_time <= self.COMBO_WINDOW:
                     self.combo_stage = 2 if self.combo_stage == 1 else 1
+                    HIT2.play()
                 else:
                     self.combo_stage = 1
+                    HIT1.play()
 
                 self.animation_count = 0
                 self.is_attacking = True
@@ -161,6 +178,8 @@ class Player(pygame.sprite.Sprite):
     def start_dash(self):
         current_time = time.time()
         if not self.is_dashing and current_time - self.last_dash_time >= self.DASH_COOLDOWN:
+            DASH.play()
+            self.start_inv(invincible_time=0.4)
             self.is_parrying = False
             self.is_dashing = True
             self.dash_end_time = current_time + self.DASH_TIME
@@ -199,6 +218,7 @@ class Player(pygame.sprite.Sprite):
         return self.jump_gravity if self.vel_y < 0.0 else self.fall_gravity
 
     def jump(self):
+        JUMP.play()
         self.jump_count += 1
         if not self.is_dashing:
             self.vel_y = self.jump_velocity
@@ -299,12 +319,12 @@ class Player(pygame.sprite.Sprite):
         self.update()
         return collided_obj
 
-    def loop(self, objects, boss, fps):
+    def loop(self, objects, boss, projectiles, fps):
         self.update()
         keys = pygame.key.get_pressed()
         self.vel_x = 0
 
-        self.is_hit(boss)
+        self.is_hit(boss, projectiles)
         self.update_inv()
 
         # OPPOSITE FORCE
@@ -345,7 +365,7 @@ class Player(pygame.sprite.Sprite):
         self.update_sprite(fps)
 
     def draw(self, win, offset_x, offset_y):
-        if self.is_invincible and randint(0, 1) == 1 and not self.is_attacking and not self.dead:
+        if (self.is_invincible and randint(0, 1) == 1) and not self.is_attacking and not self.dead and not self.is_parrying and not self.is_dashing:
             return
         self.draw_afterimage(win, offset_x, offset_y)
         win.blit(self.sprite, (self.rect.x - offset_x, self.rect.y - offset_y))
