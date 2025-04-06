@@ -1,19 +1,18 @@
-import pygame.display
 from boss import *
 from player import *
 from config import *
 
 
-def backgrounds(win, bg0, bg1, offset_x, offset_y):
-    # Background Layer 0 (PARADOX)
-    size = pygame.transform.scale_by(bg0, 1.3)
-    win.blit(size, (0 - offset_x * 0.05, -50 - offset_y * 0.1))
-
-    # Background Layer 1 (EXPERIMENTAL)
-    size = pygame.transform.scale_by(bg1, 1.2)
-    win.blit(size, (0 - offset_x * 0.1, -50 - offset_y * 0.5))
-    if offset_x > 2500:
-        win.blit(size, (921 - offset_x * 0.1, -50 - offset_y * 0.5))
+def load_font(win, size, text, color=(255, 0, 0), position=(100, 100), centered=False):
+    font = pygame.font.Font("assets/Fonts/pixel.ttf", size)
+    text_surface = font.render(text, True, color)
+    if centered:
+        text_width, text_height = text_surface.get_size()
+        x = (WIDTH - text_width) // 2
+        y = (HEIGHT - text_height) // 2
+        win.blit(text_surface, (x, y))
+    else:
+        win.blit(text_surface, position)
 
 
 def draw_health_bar(win, player, images):
@@ -33,21 +32,26 @@ def draw_health_bar(win, player, images):
             win.blit(images[1], (x_offset + i * heart_spacing, y_offset))
 
 
-def draw(win, player, objects, boss, projectiles, hearts, offset_x, offset_y):
-    # backgrounds(win, bg0, bg1, offset_x, offset_y)
+def draw(win, player, objects, background, boss, projectiles, hearts, offset_x, offset_y):
+    global PLAYED
     if not (player.dead or boss.dead):
-        boss.draw(win, offset_x, offset_y)
+        for tile in background:
+            tile.draw(win, offset_x, offset_y)
         for obj in objects:
             obj.draw(win, offset_x, offset_y)
-
+        boss.draw(win, offset_x, offset_y)
         player.draw(win, offset_x, offset_y)
         for proj in projectiles:
             proj.draw(win, offset_x, offset_y)
         draw_health_bar(win, player, hearts)
     else:
+        if not PLAYED:
+            DEATH.play()
+            PLAYED = True
         boss_mask = boss.mask.to_surface(setcolor=(255, 0, 0, 255), unsetcolor=(0, 0, 0, 0))
         player_mask = player.mask.to_surface(setcolor=(130, 0, 0, 255), unsetcolor=(0, 0, 0, 0))
         win.fill("black")
+        load_font(win, 200 if player.dead else 150, "DEATH" if player.dead else "SLAYED", centered=True, color=(100, 0, 0))
         win.blit(boss_mask, (boss.rect.x - offset_x, boss.rect.y - offset_y))
         win.blit(player_mask, (player.rect.x - offset_x, player.rect.y - offset_y))
 
@@ -55,30 +59,37 @@ def draw(win, player, objects, boss, projectiles, hearts, offset_x, offset_y):
 
 
 def update_all_methods(player, objects, boss, projectiles, fps):
-    player.update_parry()
-    player.update_attack()
-    player.update_dash()
-    player.loop(objects, boss, projectiles, fps)
-    boss.loop(player, projectiles)
-    for proj in projectiles:
-        if proj.name == "fireball":
-            proj.loop(player)
-            if player.is_hit(boss, projectiles):
-                proj.is_following = False
-        else:
-            proj.loop()
-        if proj.is_expired():
-            projectiles.remove(proj)
+    global IN_ARENA, SHRIEK_PLAYED
+    if not (player.dead or boss.dead):
+        player.update_parry()
+        player.update_attack()
+        player.update_dash()
+        player.loop(objects, boss, projectiles, fps)
+        if player.rect.x > ARENA_POS or IN_ARENA:
+            if not SHRIEK_PLAYED:
+                camera.trigger_shake(duration=110)
+                SHRIEK.play()
+                SHRIEK_PLAYED = True
+            boss.loop(player, projectiles)
+            IN_ARENA = True
+        for proj in projectiles:
+            if proj.name == "fireball":
+                proj.loop(player)
+                if player.is_hit(boss, projectiles):
+                    proj.is_following = False
+            else:
+                proj.loop()
+            if proj.is_expired():
+                projectiles.remove(proj)
+    else:
+        IN_ARENA = False
 
 
 def main(window):
+    global IN_ARENA
     # BASIC SETUP VARIABLES
     running = True
     clock = pygame.time.Clock()
-
-    # BACKGROUND
-    bg0 = get_background(BACKGROUND_LAYER_0)
-    bg1 = get_background(BACKGROUND_LAYER_1)
 
     # SCROLL & OFFSET
     offset_x, offset_y = 0, 650
@@ -96,6 +107,9 @@ def main(window):
     # OBJECTS & BLOCKS
     objects = OBJECTS
 
+    # BACKGROUND
+    background = BACKGROUND
+
     # MAIN LOOP
     while running:
         for event in pygame.event.get():
@@ -103,7 +117,7 @@ def main(window):
                 running = False
                 break
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE and player.jump_count < 10:
+                if event.key == pygame.K_SPACE and player.jump_count < 1:
                     player.jump()
                 if event.key == pygame.K_LSHIFT:
                     player.start_dash()
@@ -115,13 +129,13 @@ def main(window):
                     pygame.quit()
                     quit()
                 if event.key == pygame.K_r:
+                    IN_ARENA = False
                     main(window)
-        # PLAYER
-        if not (player.dead or boss.dead):
-            update_all_methods(player, objects, boss, projectiles, FPS)
+        print(boss.health)
+        update_all_methods(player, objects, boss, projectiles, FPS)
         camera.update_shake()
-        window.fill("white")
-        draw(window, player, objects, boss, projectiles, hearts, offset_x, offset_y)
+        window.fill((25, 20, 36))
+        draw(window, player, objects, background, boss, projectiles, hearts, offset_x, offset_y)
 
         # CLOCK
         clock.tick(FPS)
