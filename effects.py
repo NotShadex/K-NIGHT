@@ -1,6 +1,7 @@
-from random import randint
-import pygame.mixer
 import time
+import pygame.mixer
+from os import listdir
+from random import randint
 
 
 def play_sound(sfx):
