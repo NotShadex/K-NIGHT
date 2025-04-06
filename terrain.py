@@ -18,16 +18,16 @@ class Object(pygame.sprite.Sprite):
 
 
 class Block(Object):
-    def __init__(self, x, y, size):
+    def __init__(self, x, y, size, file_name):
         super().__init__(x, y, size, size)
-        block = get_block(size)
+        block = get_block(size, file_name)
         self.image.blit(block, (0, 0))
         self.mask = pygame.mask.from_surface(self.image)
 
 
-def read_csv():
+def read_csv(filename):
     sez = []
-    path = join("assets", "Terrain", "project_Tiles.csv")
+    path = join("assets", "Terrain", filename)
     with open(path) as data:
         data = csv.reader(data, delimiter=",")
         for row in data:
@@ -43,22 +43,21 @@ def get_map(csv, block_size):
         x = -block_size
         for tile in range(len(csv[row])):
             x += block_size
-            if csv[row][tile] != "-1":
-                obj.append(Block(x, y, block_size))
-
+            if csv[row][tile] != "-1" and csv[row][tile] != "32":
+                obj.append(Block(x, y, block_size, f"tile{int(csv[row][tile]):03d}.png"))
     return obj
 
 
 # Define the block sizes!
-def get_block(size):
-    path = join("assets", "Terrain", "Tiles.png")
+def get_block(size, filename):
+    path = join("assets", "Terrain", "Tiles", filename)
     image = pygame.image.load(path).convert_alpha()
-    pos_x, pos_y = 0, 320
+    pos_x, pos_y = 0, 0
     surface = pygame.Surface((size, size), pygame.SRCALPHA, 32)
     rect = pygame.Rect(pos_x, pos_y, size, size)
     surface.blit(image, (0, 0), rect)
 
-    return pygame.transform.scale2x(surface)
+    return pygame.transform.scale_by(surface, 3)
 
 
 def get_background(name):
