@@ -1,8 +1,4 @@
-from random import randint
 from config import *
-from sprite_cutter import *
-import time
-from visual import *
 
 
 class Player(pygame.sprite.Sprite):
@@ -36,6 +32,7 @@ class Player(pygame.sprite.Sprite):
         self.sprite = self.SPRITES["idle_left"][0]
         self.ground_rect = None
         self.real_rect = None
+        self.head_rect = None
 
         # VELOCITY
         self.vel_x = 0
@@ -60,7 +57,6 @@ class Player(pygame.sprite.Sprite):
         self.last_attack_time = 0
         self.combo_start_time = 0
         self.combo_stage = 1
-        self.aerial = False
 
         # PARRY
         self.is_parrying = False
@@ -69,6 +65,7 @@ class Player(pygame.sprite.Sprite):
         self.current_parry_sprite = ""
         self.parry_middle_start_time = 0
         self.parry_end_start_time = 0
+        self.parry_success = False
 
         # HEALTH
         self.is_invincible = False
@@ -100,13 +97,14 @@ class Player(pygame.sprite.Sprite):
                 self.start_inv()
                 self.health -= 1
                 HURT.play()
-            if self.is_parrying:
+            if self.is_parrying and not self.parry_success:
                 self.health += 1
+                self.parry_success = True
         try:
             for proj in projectiles:
                 if pygame.sprite.collide_mask(self, proj):
-                    if not self.is_invincible:
-                        proj_hit_player = True
+                    proj_hit_player = True
+                    if not self.is_invincible and proj.can_hit:
                         camera.trigger_shake(5)
                         self.start_inv(invincible_time=2.0)
                         self.health -= 1
@@ -115,6 +113,8 @@ class Player(pygame.sprite.Sprite):
             pass
         if self.health <= 0:
             self.dead = True
+        if not boss.is_attacking:
+            self.parry_success = False
 
         return proj_hit_player
 
@@ -285,16 +285,25 @@ class Player(pygame.sprite.Sprite):
     def update(self):
         # TODO : THIS IS RETARDED
         self.rect = self.sprite.get_rect(topleft=(self.rect.x, self.rect.y))
+
         self.ground_rect = self.rect.copy()
         self.ground_rect.width = 55
         self.ground_rect.height = 5
         self.ground_rect.y = (self.rect.bottom + 1) - self.ground_rect.height
         self.ground_rect.centerx = self.rect.centerx
+
         self.real_rect = self.rect.copy()
         self.real_rect.width = 70
         self.real_rect.height = 5
         self.real_rect.y = (self.rect.bottom - 10) - self.ground_rect.height
         self.real_rect.centerx = self.rect.centerx
+
+        self.head_rect = self.rect.copy()
+        self.head_rect.width = 20
+        self.head_rect.height = 10
+        self.head_rect.y = (self.rect.bottom - 50) - self.head_rect.height
+        self.head_rect.centerx = self.rect.centerx
+
         self.mask = pygame.mask.from_surface(self.sprite)
 
     def handle_vertical_collision(self, objects):
@@ -306,6 +315,11 @@ class Player(pygame.sprite.Sprite):
                     self.ground_rect.bottom = obj.rect.top
                     self.rect.bottom = obj.rect.top
                     self.vel_y = 0
+            if self.head_rect.colliderect(obj.rect):
+                if self.vel_y < 0:
+
+                    self.head_rect.top = obj.rect.bottom
+                    self.vel_y *= -1
 
     def handle_horizontal_collison(self, objects, dx):
         collided_obj = False
@@ -331,7 +345,7 @@ class Player(pygame.sprite.Sprite):
         collide_left = self.handle_horizontal_collison(objects, -PLAYER_VEL * 2)
         collide_right = self.handle_horizontal_collison(objects, PLAYER_VEL * 2)
 
-        if (not self.is_attacking and not self.is_parrying) or self.aerial:
+        if not self.is_attacking and not self.is_parrying:
             if keys[pygame.K_a] and not keys[pygame.K_d] and not collide_left:
                 self.move_left(PLAYER_VEL)
             elif keys[pygame.K_d] and not keys[pygame.K_a] and not collide_right:
