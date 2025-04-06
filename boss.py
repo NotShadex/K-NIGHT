@@ -1,8 +1,4 @@
 from config import *
-from sprite_cutter import *
-import time
-from random import randint
-from visual import *
 
 
 class Boss:
@@ -18,8 +14,8 @@ class Boss:
     DASH_TIME = 1.0
     DASH_COOLDOWN = 0.0
     # RAGE
-    RAGE_PERCENTAGE = 30
-    BOSS_HEALTH = 35
+    RAGE_PERCENTAGE = 25
+    BOSS_HEALTH = 40
     # PROJECTILE
     PROJECTILE_COOLDOWN = 1.5
 
@@ -79,6 +75,7 @@ class Boss:
     def is_hit(self, player):
         if player.is_attacking and pygame.sprite.collide_mask(self, player):
             if not self.is_invincible:
+                BOSS_HURT.play()
                 camera.trigger_shake(shake_intensity=2, duration=5)
                 self.start_inv()
                 self.health -= 1
@@ -169,7 +166,7 @@ class Boss:
 
     def move_to_player(self, player, projectiles):
         self.is_standing = False
-        if 15 <= self.health <= self.RAGE_PERCENTAGE:
+        if 10 <= self.health <= self.RAGE_PERCENTAGE:
             camera.trigger_shake(shake_intensity=3, duration=5)
             self.add_projectile(projectiles)
             self.is_enraged = True
@@ -250,6 +247,7 @@ class Projectile:
         self.spawner = Spawner(spawn_x, spawn_y, width, height)
         self.is_following = True
         self.move_x, self.move_y = 0, 0
+        self.can_hit = True
         play_sound(CAST)
 
     def update(self):
@@ -320,8 +318,8 @@ class Column:
     SPRITES = load_sprite_sheets("Boss", 45, 90, False, 4.0)
     ANIMATION_DELAY = 5
     PROJECTILE_VEL = 5
-    TTL = 1.5
-    INDICATOR_TIME = 0.5
+    TTL = 2.0
+    INDICATOR_TIME = 1.0
 
     def __init__(self, spawn_x, spawn_y, width, height):
         self.rect = pygame.Rect(spawn_x, spawn_y, width, height)
@@ -332,6 +330,7 @@ class Column:
         self.spawn_time = time.time()
         self.is_following = True
         self.move_x, self.move_y = 0, 0
+        self.can_hit = False
         self.sound = SoundTimer(1.5)
 
     def update(self):
@@ -342,7 +341,9 @@ class Column:
         sprite_index = (self.animation_count // self.ANIMATION_DELAY) % len(sprites)
 
         if time.time() - self.spawn_time <= self.INDICATOR_TIME:
+            self.can_hit = False
             return
+        self.can_hit = True
         self.sound.play(COLUMN)
         self.sprite = sprites[sprite_index]
         self.animation_count += 1
