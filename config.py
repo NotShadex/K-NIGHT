@@ -1,11 +1,7 @@
-import pygame
 from terrain import *
 from effects import *
 from sprite_cutter import *
-import time
-from random import randint
-from os.path import isfile, join
-import csv
+
 
 # GAME SETUP & CONST VALUES
 GAME_TITLE = "K-NIGHT"
@@ -14,7 +10,7 @@ FPS = 60
 PLAYER_VEL = 7
 
 # INITIALIZE DISPLAY
-WINDOW = pygame.display.set_mode((WIDTH, HEIGHT),)  # pygame.SCALED | pygame.FULLSCREEN
+WINDOW = pygame.display.set_mode((WIDTH, HEIGHT), pygame.SCALED | pygame.FULLSCREEN)  # pygame.SCALED | pygame.FULLSCREEN
 pygame.display.set_caption(GAME_TITLE)
 
 # INITIALIZE MIXER
@@ -24,12 +20,16 @@ pygame.mixer.set_num_channels(16)
 # INITIALIZE FONTS
 pygame.font.init()
 
+# ICON
+icon = pygame.image.load('assets/GUI/icon.png')
+pygame.display.set_icon(icon)
+
 # HEARTS
-heart_full = pygame.image.load("assets/GUI/full_heart.png").convert_alpha()
-heart_full = pygame.transform.scale2x(heart_full)
+FULL_HEART = pygame.image.load("assets/GUI/full_heart.png").convert_alpha()
+FULL_HEART = pygame.transform.scale2x(FULL_HEART)
 NO_HEART = pygame.image.load("assets/GUI/no_heart.png").convert_alpha()
 NO_HEART = pygame.transform.scale2x(NO_HEART)
-HEARTS = [heart_full, NO_HEART]
+HEARTS = [FULL_HEART, NO_HEART]
 
 # SHAKE EFFECT
 camera = Shake()
@@ -49,7 +49,7 @@ BACKGROUND = get_map(read_csv("new_Background.csv"), BLOCK_SIZE)
 
 # PLAYER INITIAL POSITION
 PLAYER_START_X = 100
-PLAYER_START_Y = 700
+PLAYER_START_Y = 840
 PLAYER_WIDTH = 120
 PLAYER_HEIGHT = 60
 
@@ -62,6 +62,9 @@ BOSS_HEIGHT = 160
 # PLAYER IN ARENA
 IN_ARENA = False
 ARENA_POS = 2500
+
+# MUSIC
+TRACK = pygame.mixer.Sound("assets/Music/sonic.wav")
 
 # SOUND EFFECTS
 path = join("assets", "Sound Effects", "")
@@ -89,3 +92,4 @@ BOSS_ATK.set_volume(0.7)
 EXPLOSION.set_volume(0.5)
 CAST.set_volume(0.2)
 COLUMN.set_volume(0.2)
+TRACK.set_volume(0.5)
