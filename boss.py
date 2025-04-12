@@ -14,8 +14,8 @@ class Boss:
     DASH_TIME = 1.0
     DASH_COOLDOWN = 0.0
     # RAGE
-    RAGE_PERCENTAGE = 25
-    BOSS_HEALTH = 40
+    RAGE_PERCENTAGE = 20
+    BOSS_HEALTH = 35
     # PROJECTILE
     PROJECTILE_COOLDOWN = 1.5
 
@@ -33,7 +33,6 @@ class Boss:
         self.vel_x = self.BOSS_VEL
         self.distance = 200
         self.is_chasing = True
-        self.is_standing = True
 
         # ATTACK
         self.is_attacking = False
@@ -84,6 +83,7 @@ class Boss:
         self.update_inv()
 
     def add_projectile(self, projectiles):
+        """Spawns two projectiles at the same time then applies cooldown"""
         current_time = time.time()
         if current_time - self.last_proj_time >= self.PROJECTILE_COOLDOWN:
             projectiles.append(Projectile(self.rect.centerx + randint(-500, -50), self.rect.centery - 70, 60, 60))
@@ -91,6 +91,7 @@ class Boss:
             self.last_proj_time = current_time
 
     def collumn_attack(self, projectiles):
+        """Spawns 6 columns with randomized spacing and applied cooldown"""
         current_time = time.time()
         spacing = 300 if randint(0, 1) == 1 else 100
         column_count = 5
@@ -110,7 +111,8 @@ class Boss:
 
     def update_dash(self):
         if self.is_dashing:
-            self.add_afterimage()
+            if randint(0, 3) == 1:  # Less afterimages for performance
+                self.add_afterimage()
             if time.time() >= self.dash_end_time:
                 self.is_dashing = False
 
@@ -126,6 +128,7 @@ class Boss:
         self.afterimages.append(afterimage)
 
     def draw_afterimage(self, win, offset_x, offset_y):
+        """Unpacks the values so it can draw afterimages"""
         for img, pos, alpha in self.afterimages:
             ghost = img.copy()
             ghost.set_alpha(alpha)
@@ -134,11 +137,12 @@ class Boss:
     def start_attack(self, player, projectiles):
         current_time = time.time()
         if not self.is_attacking and current_time - self.last_attack_time >= self.ATTACK_COOLDOWN:
+            # This line is so the boss doesn't switch direction after starting an attack
             if player.rect.centerx < self.rect.centerx:
                 self.direction = "right"
             else:
                 self.direction = "left"
-            if randint(0, 3) == 1:
+            if randint(0, 3) == 1:  # 1 in 4 chance to spawn projectiles
                 projectiles.append(Projectile(self.rect.centerx, self.rect.centery - 70, 60, 60))
             self.collumn_attack(projectiles)
             self.animation_count = 0
@@ -148,14 +152,16 @@ class Boss:
 
     def update_attack(self):
         if self.is_attacking:
+            # This code makes sure that the boss doesn't damage the player while winding up the attack
             attack_sprites = self.SPRITES[f"attack1_{self.direction}"]
             current_frame = (self.animation_count // self.ANIMATION_DELAY) % len(attack_sprites)
-
             self.is_attack_active = True if current_frame > 9 else False
+
             if self.is_attack_active:
                 camera.trigger_shake(shake_intensity=3, duration=2)
 
             if current_frame == 9 and not self.sound_played:
+                # Plays the sound when hitting the ground and the bool makes sure it is played once
                 BOSS_ATK.play()
                 self.sound_played = True
 
@@ -165,20 +171,19 @@ class Boss:
                 self.is_attack_active = False
 
     def move_to_player(self, player, projectiles):
-        self.is_standing = False
+        # If the boss is enraged ignore movement and attack options
         if 10 <= self.health <= self.RAGE_PERCENTAGE:
             camera.trigger_shake(shake_intensity=3, duration=5)
             self.add_projectile(projectiles)
             self.is_enraged = True
+            # Plays the shriek every 2 seconds using the class I implemented
             self.shriek.play(SHRIEK)
-
             return
         else:
             self.is_enraged = False
 
         if self.is_chasing and not self.is_attacking:
-            distance_to_player = player.rect.centerx - self.rect.centerx
-            if abs(distance_to_player) > 500:
+            if abs(player.rect.centerx - self.rect.centerx) > 500:
                 self.start_dash()
             if player.rect.centerx < self.rect.centerx - self.distance:
                 self.rect.x += -self.vel_x if not self.is_dashing else (-self.vel_x * 10)
@@ -187,9 +192,8 @@ class Boss:
                 self.rect.x += self.vel_x if not self.is_dashing else (self.vel_x * 10)
                 self.direction = "left"
             else:
-                if not self.is_attacking and not self.is_enraged:
+                if not self.is_attacking:
                     self.start_attack(player, projectiles)
-                    self.is_standing = True
 
     def update(self):
         self.rect = self.sprite.get_rect(topleft=(self.rect.x, self.rect.y))
@@ -201,8 +205,6 @@ class Boss:
             sprite_sheet = "run"
         if self.is_attacking:
             sprite_sheet = "attack1"
-        if self.is_standing:
-            sprite_sheet = "idle"
         if self.is_enraged:
             sprite_sheet = "attack2"
 
@@ -221,7 +223,7 @@ class Boss:
         self.update_sprite()
 
     def draw(self, win, offset_x, offset_y):
-        if self.is_invincible and randint(0, 1) == 1:
+        if self.is_invincible and randint(0, 1) == 1:  # When boss is hit colors him red 1 in 2 chance
             mask_surface = self.mask.to_surface(setcolor=(255, 0, 0, 255), unsetcolor=(0, 0, 0, 0))
             win.blit(mask_surface, (self.rect.x - offset_x, self.rect.y - offset_y))
             return
@@ -239,7 +241,7 @@ class Projectile:
     def __init__(self, spawn_x, spawn_y, width, height):
         self.rect = pygame.Rect(spawn_x, spawn_y, width, height)
         self.mask = None
-        self.name = "fireball"
+        self.name = "fireball"  # So I can have projectiles and columns in the same list
         self.animation_count = 0
         self.sprite = self.SPRITES["spawn"][0]
         self.vel = self.PROJECTILE_VEL
@@ -267,6 +269,7 @@ class Projectile:
 
             dist = max(1, (dx**2 + dy**2) ** 0.5)
 
+            # Writes the last recorded position of the player
             self.move_x = (dx / dist) * self.vel
             self.move_y = (dy / dist) * self.vel
 
@@ -278,6 +281,7 @@ class Projectile:
             if time.time() - self.spawn_time >= self.FOLLOW_TIME:
                 self.is_following = False
         else:
+            # Moves to the last direction the player was seen
             self.rect.x += self.move_x
             self.rect.y += self.move_y
 
@@ -295,6 +299,7 @@ class Projectile:
 
 
 class Spawner:
+    """Purely for aesthetic value. Nothing else nothing more"""
     SPRITES = load_sprite_sheets("Boss", 64, 64, False, 1.0)
     ANIMATION_DELAY = 6
 
@@ -328,8 +333,6 @@ class Column:
         self.animation_count = 0
         self.sprite = self.SPRITES["column"][0]
         self.spawn_time = time.time()
-        self.is_following = True
-        self.move_x, self.move_y = 0, 0
         self.can_hit = False
         self.sound = SoundTimer(1.5)
 
