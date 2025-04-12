@@ -6,7 +6,7 @@ class Player(pygame.sprite.Sprite):
     SPRITES = load_sprite_sheets("Player", 120, 80, True)
     ANIMATION_DELAY = 4
     # CUSTOM JUMP CONSTANTS
-    JUMP_HEIGHT = 3
+    JUMP_HEIGHT = 2.5
     JUMP_TIME_TO_PEAK = 0.5
     JUMP_TIME_TO_DESCEND = 0.4
     # DASH CONSTANTS
@@ -33,6 +33,7 @@ class Player(pygame.sprite.Sprite):
         self.ground_rect = None
         self.real_rect = None
         self.head_rect = None
+        self.sheet = None
 
         # VELOCITY
         self.vel_x = 0
@@ -97,13 +98,14 @@ class Player(pygame.sprite.Sprite):
                 self.start_inv()
                 self.health -= 1
                 HURT.play()
-            if self.is_parrying and not self.parry_success:
+            if self.is_parrying and not self.parry_success and self.health != self.MAX_HEALTH:
                 self.health += 1
                 self.parry_success = True
-        try:
+        try:  # Since I set the mask of the projectiles in __init__ to None I have to have a try except block
             for proj in projectiles:
                 if pygame.sprite.collide_mask(self, proj):
                     proj_hit_player = True
+                    proj.is_following = False
                     if not self.is_invincible and proj.can_hit:
                         camera.trigger_shake(5)
                         self.start_inv(invincible_time=2.0)
@@ -126,8 +128,7 @@ class Player(pygame.sprite.Sprite):
                 self.is_parrying = True
                 self.parry_end_time = current_time + self.PARRY_TIME
                 self.last_parry_time = current_time
-
-                self.current_parry_sprite = "crouchtran"
+                self.current_parry_sprite = "crouchtran"  # Start animation with the transition
                 self.parry_middle_start_time = current_time + 0.1
                 self.parry_end_start_time = self.parry_end_time - 0.1
 
@@ -138,13 +139,7 @@ class Player(pygame.sprite.Sprite):
             if self.parry_middle_start_time <= current_time < self.parry_end_start_time:
                 self.current_parry_sprite = "crouch"
             elif current_time >= self.parry_end_start_time:
-                self.current_parry_sprite = "crouchtran"
-
-            if self.sprite == self.SPRITES["crouch_left"][0] or self.sprite == self.SPRITES["crouch_right"][0] or self.sprite == self.SPRITES["crouchtran_left"][0] or self.sprite == self.SPRITES["crouchtran_right"][0]:
-                overlay = pygame.Surface(self.sprite.get_size(), pygame.SRCALPHA)
-                overlay.fill((255, 215, 0, 0))
-                self.sprite.blit(overlay, (0, 0), special_flags=pygame.BLEND_MAX)
-
+                self.current_parry_sprite = "crouchtran"  # End animation with a transition
             if current_time >= self.parry_end_time:
                 self.is_parrying = False
 
@@ -213,22 +208,15 @@ class Player(pygame.sprite.Sprite):
             ghost.set_alpha(alpha)
             win.blit(ghost, (pos[0] - offset_x, pos[1] - offset_y))
 
-    # GRAVITY, JUMP, MOVING THE PLAYER
     def get_gravity(self):
         return self.jump_gravity if self.vel_y < 0.0 else self.fall_gravity
 
     def jump(self):
-        JUMP.play()
         self.jump_count += 1
         if not self.is_dashing:
+            JUMP.play()
             self.vel_y = self.jump_velocity
             self.is_parrying = False
-
-    def move(self, dx, dy):
-        """Handles the movement of the rect itself.
-           rect.x, rect.y can be used as coordinates"""
-        self.rect.x += dx
-        self.rect.y += dy
 
     def move_left(self, vel):
         self.vel_x = -vel
@@ -242,37 +230,28 @@ class Player(pygame.sprite.Sprite):
             self.direction = "right"
             self.animation_count = 0
 
-    # HANDLE ANIMATION
     def update_sprite(self, fps):
         """Handles all the animation of the player"""
-
-        # Defining the first frame
         sprite_sheet = "idle"
-        # JUMPING
         if self.vel_y < 0:
             sprite_sheet = "jump"
-        # FALLING
         elif self.vel_y > self.get_gravity() / fps * 2:
             sprite_sheet = "fall"
         # TODO : This is very retarded, but it works for now so fucking leave it as it is
         elif (self.vel_y >= self.get_gravity() / fps or round(self.vel_y) == 0) and not self.is_on_floor:
             sprite_sheet = "jumptran"
-        # ATTACKING
         elif self.is_attacking:
             match self.combo_stage:
                 case 1: sprite_sheet = "attack1"
                 case 2: sprite_sheet = "attack2"
         elif self.is_parrying:
             sprite_sheet = self.current_parry_sprite
-        # RUNNING
         elif self.vel_x != 0:
             if self.is_on_floor:
                 sprite_sheet = "run"
-        # DASHING
         if self.is_dashing:
             sprite_sheet = "dash"
-
-        # print(f"State : {sprite_sheet} Vel Y: {self.vel_y} Gravity : {self.get_gravity() / fps}")
+        self.sheet = sprite_sheet  # For easier access to the sheet
 
         sprite_sheet_name = sprite_sheet + "_" + self.direction
         sprites = self.SPRITES[sprite_sheet_name]
@@ -281,29 +260,28 @@ class Player(pygame.sprite.Sprite):
         self.animation_count += 1
         self.update()
 
-    # HANDLE UPDATING THE PLAYER
     def update(self):
         # TODO : THIS IS RETARDED
         self.rect = self.sprite.get_rect(topleft=(self.rect.x, self.rect.y))
-
+        # Used for checking ground collisions
         self.ground_rect = self.rect.copy()
         self.ground_rect.width = 55
         self.ground_rect.height = 5
         self.ground_rect.y = (self.rect.bottom + 1) - self.ground_rect.height
         self.ground_rect.centerx = self.rect.centerx
-
+        # Used for checking horizontal collisions
         self.real_rect = self.rect.copy()
         self.real_rect.width = 70
         self.real_rect.height = 5
         self.real_rect.y = (self.rect.bottom - 10) - self.ground_rect.height
         self.real_rect.centerx = self.rect.centerx
-
+        # Used for checking head collisions
         self.head_rect = self.rect.copy()
         self.head_rect.width = 20
         self.head_rect.height = 10
         self.head_rect.y = (self.rect.bottom - 50) - self.head_rect.height
         self.head_rect.centerx = self.rect.centerx
-
+        # Used for pixel perfect collisions
         self.mask = pygame.mask.from_surface(self.sprite)
 
     def handle_vertical_collision(self, objects):
@@ -317,19 +295,18 @@ class Player(pygame.sprite.Sprite):
                     self.vel_y = 0
             if self.head_rect.colliderect(obj.rect):
                 if self.vel_y < 0:
-
                     self.head_rect.top = obj.rect.bottom
-                    self.vel_y *= -1
+                    self.vel_y *= -1  # Bumps the head on the object
 
     def handle_horizontal_collison(self, objects, dx):
         collided_obj = False
-        self.move(dx, 0)
+        self.rect.x += dx
         self.update()
         for obj in objects:
             if self.real_rect.colliderect(obj.rect):
                 collided_obj = True
                 break
-        self.move(-dx, 0)
+        self.rect.x += -dx
         self.update()
         return collided_obj
 
@@ -366,15 +343,11 @@ class Player(pygame.sprite.Sprite):
             self.vel_y += self.get_gravity() / fps
         elif self.is_on_floor:
             self.jump_count = 0
-
-        self.rect.y += self.vel_y
-        self.handle_vertical_collision(objects)
-
         if self.is_dashing:
             self.vel_y = 0
 
-        # print(self.is_on_floor, self.vel_y)
-        # print("X CORDS:", self.rect.x, self.ground_rect.x, "Y CORDS:", self.rect.y, self.ground_rect.y)
+        self.rect.y += self.vel_y
+        self.handle_vertical_collision(objects)
 
         self.update_sprite(fps)
 
@@ -383,8 +356,9 @@ class Player(pygame.sprite.Sprite):
             return
         self.draw_afterimage(win, offset_x, offset_y)
         win.blit(self.sprite, (self.rect.x - offset_x, self.rect.y - offset_y))
+        if self.is_parrying:  # Overlays a yellow color when parrying (indicator)
+            mask_surface = self.mask.to_surface(setcolor=(255, 255, 0, 150), unsetcolor=(0, 0, 0, 0))
+            win.blit(mask_surface, (self.rect.x - offset_x, self.rect.y - offset_y))
 
 
-# Might be useful later
-# mask_surface = self.mask.to_surface(setcolor=(255, 0, 0, 255), unsetcolor=(0, 0, 0, 0))
-# win.blit(mask_surface, (self.rect.x - offset_x, self.rect.y - offset_y))
+
