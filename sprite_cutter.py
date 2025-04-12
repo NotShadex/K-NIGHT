@@ -5,11 +5,12 @@ from os.path import isfile, join
 
 # Flips all the sprites from left to right at least those requiring being flipped
 def flip(sprites):
+    """Flips all the sprites from left to right"""
     return [pygame.transform.flip(sprite, True, False) for sprite in sprites]
 
 
-# You may add directories as needed
 def load_sprite_sheets(dir1, width, height, direction=False, scale_factor=1.5):
+    """Makes a sprite sheet. Define the width and height of the entire sprite sheet and if it is directional"""
     path = join("assets", dir1)
     images = [f for f in listdir(path) if isfile(join(path, f))]
 

@@ -5,12 +5,14 @@ from random import randint
 
 
 def play_sound(sfx):
+    """Plays the sound on multiple channels if they are free"""
     channel = pygame.mixer.find_channel()
     if channel:
         channel.play(sfx)
 
 
 class SoundTimer:
+    """Delays the sound played for the given cooldown"""
     def __init__(self, cooldown_seconds):
         self.cooldown = cooldown_seconds
         self.last_played = 0
@@ -32,10 +34,12 @@ class Shake:
         self.shake_intensity = 5
 
     def trigger_shake(self, shake_intensity=5, duration=10):
+        # Duration is defined in frames so duration=10 that equals to 10 frames
         self.shake_time = duration
         self.shake_intensity = shake_intensity
 
     def update_shake(self):
+        """You need to update shake every frames so insert it in the main loop"""
         if self.shake_time > 0:
             self.shake_time -= 1
             self.shake_x = randint(-self.shake_intensity, self.shake_intensity)
@@ -45,4 +49,5 @@ class Shake:
             self.shake_y = 0
 
     def apply_shake(self, x_offset, y_offset):
+        """Applies the shake put it on some kind of triggers (player gets hit)"""
         return x_offset + self.shake_x, y_offset + self.shake_y
