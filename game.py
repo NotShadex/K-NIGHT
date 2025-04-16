@@ -1,97 +1,8 @@
+import time
+
 from boss import *
 from player import *
-from config import *
-
-
-def load_font(win, size, text, color=(255, 255, 255), position=(100, 100), centered=False):
-    """color : (tuple[int, int, int], str, optional) : you can also use the colors built in pygame e.g. 'white'
-       centered (bool, optional): If True, centers text on the screen (x, y). Ignores `position` when enabled. """
-    font = pygame.font.Font("assets/Fonts/pixel.ttf", size)
-    text_surface = font.render(text, False, color)
-    if centered:
-        text_width, text_height = text_surface.get_size()
-        x = (WIDTH - text_width) // 2
-        y = (HEIGHT - text_height) // 2
-        win.blit(text_surface, (x, y))
-    else:
-        win.blit(text_surface, position)
-
-
-def draw_health_bar(win, player, images):
-    """Has its builtin shake function when player is invincible
-       images (tuple[image(full_heart), image(empty_heart)]) : if you plan on changing it watch out!"""
-
-    heart_spacing, x_offset, y_offset = 30, 10, 10
-    heart_shake = Shake()
-
-    for i in range(player.MAX_HEALTH):
-        heart_shake.update_shake()
-        if player.is_invincible and not player.is_attacking and not player.is_dashing and not player.is_parrying:
-            heart_shake.trigger_shake(shake_intensity=2, duration=5)
-        elif player.health == 1:
-            heart_shake.trigger_shake(shake_intensity=1)
-        x_offset, y_offset = heart_shake.apply_shake(x_offset, y_offset)
-        if i < player.health:
-            win.blit(images[0], (x_offset + i * heart_spacing, y_offset))
-        else:
-            win.blit(images[1], (x_offset + i * heart_spacing, y_offset))
-
-
-def statistics(win, player, boss, offset_x, offset_y):
-    """Purely for statistics uncomment in the main draw function"""
-    can_parry = time.time() - player.last_parry_time >= player.PARRY_COOLDOWN
-    load_font(win, 15, f"STATE: {player.sheet}", position=(15, 50))
-    load_font(win, 15, f"BOSS HP: {boss.health}", position=(15, 65))
-    load_font(win, 15, f"POSITION X: {player.rect.x} Y: {player.rect.y}", position=(15, 80))
-    load_font(win, 15, f"VELOCITY X: {player.vel_x} Y: {round(player.vel_y, 2)}", position=(15, 95))
-    load_font(win, 15, f"OFFSET X: {offset_x} Y: {offset_y}", position=(15, 110))
-    load_font(win, 15, f"INVINCIBLE: {player.is_invincible}", position=(15, 125))
-    load_font(win, 15, f"CAN PARRY: {can_parry}", position=(15, 140))
-    load_font(win, 15, f"DIRECTION: {player.direction}", position=(15, 155))
-
-
-def tutorial_text(win, offset_x, offset_y):
-    """INTRODUCTION for the PLAYER"""
-    load_font(win, 20, "GAME BY SHADEX", position=(300 - offset_x, 730 - offset_y))
-    load_font(win, 15, f"{"FUNCTION":<15}KEY", position=(300 - offset_x, 750 - offset_y))
-    load_font(win, 15, f"{"Movement":<15}AD", position=(300 - offset_x, 765 - offset_y))
-    load_font(win, 15, f"{"Jump":<15}SPACE", position=(300 - offset_x, 780 - offset_y))
-    load_font(win, 15, f"{"Dash":<15}SHIFT", position=(300 - offset_x, 795 - offset_y))
-    load_font(win, 15, f"{"Attack":<15}J", position=(300 - offset_x, 810 - offset_y))
-    load_font(win, 15, f"{"Parry":<15}K", position=(300 - offset_x, 825 - offset_y))
-
-
-def draw(win, player, objects, background, boss, projectiles, hearts, offset_x, offset_y):
-    """Handles the drawing of all the classes/instances and the offset
-       Also handles the death screen, a little messed up, but it works (I am too lazy)"""
-    global PLAYED # For playing the shriek when you enter the arena
-    if not (player.dead or boss.dead):
-        for tile in background:
-            tile.draw(win, offset_x, offset_y)
-        for obj in objects:
-            obj.draw(win, offset_x, offset_y)
-        boss.draw(win, offset_x, offset_y)
-        player.draw(win, offset_x, offset_y)
-        for proj in projectiles:
-            proj.draw(win, offset_x, offset_y)
-        draw_health_bar(win, player, hearts)
-        statistics(win, player, boss, offset_x, offset_y)
-    else:
-        # Stops the track when you die split up the texts to look nicer looks like a lot of code purely aesthetic
-        TRACK.stop()
-        t1, t2 = 'PRESS "R" TO RESTART', "THANK YOU SO MUCH FOR PLAYING!"
-        p1, p2 = (200, 270), (140, 270)
-        if not PLAYED:
-            DEATH.play()
-            PLAYED = True
-        boss_mask = boss.mask.to_surface(setcolor=(255, 0, 0, 255), unsetcolor=(0, 0, 0, 0))
-        player_mask = player.mask.to_surface(setcolor=(130, 0, 0, 255), unsetcolor=(0, 0, 0, 0))
-        win.fill("black")
-        load_font(win, 200 if player.dead else 150, "DEATH" if player.dead else "SLAYED", centered=True, color=(100, 0, 0))
-        load_font(win, 20, t1 if player.dead else t2, position=p1 if player.dead else p2, color=(100, 0, 0))
-        win.blit(boss_mask, (boss.rect.x - offset_x, boss.rect.y - offset_y))
-        win.blit(player_mask, (player.rect.x - offset_x, player.rect.y - offset_y))
-    pygame.display.update()
+from interface import *
 
 
 def update_all_methods(player, objects, boss, projectiles, camera, fps):
@@ -122,6 +33,69 @@ def update_all_methods(player, objects, boss, projectiles, camera, fps):
         camera.update_shake()
     else:
         IN_ARENA = False
+
+
+def main_menu(win):
+    clock = pygame.time.Clock()
+    trans = False
+    trans_start = None
+    sound = SoundTimer(2)
+    play_bt = Button(win, [325, 280], "PLAY", 50, font="assets/Fonts/main.ttf")
+    control_bt = Button(win, [325, 330], "CONTROLS", 50, font="assets/Fonts/main.ttf")
+    while True:
+        mouse_pos = pygame.mouse.get_pos()
+
+        if not trans:
+            win.fill("black")
+            load_font(win, 150, "K-N1GHT", position=(80, 40), font="assets/Fonts/main.ttf")
+            size = pygame.transform.smoothscale_by(SWORD, 0.25)
+            win.blit(size, (center_image(size)[0] + 7, center_image(size)[1] - 50))
+            for button in [play_bt, control_bt]:
+                button.hover(mouse_pos, SELECT)
+                button.draw(win)
+        else:
+            win.fill((130, 0, 0))
+            size = pygame.transform.smoothscale_by(SWORD, 0.25)
+            win.blit(size, (center_image(size)[0] + 7, center_image(size)[1] - 50))
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if play_bt.input_check(mouse_pos):
+                    trans = True
+                    trans_start = pygame.time.get_ticks()
+                if control_bt.input_check(mouse_pos):
+                    sound.play(CONFIRM)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    quit()
+
+        if trans:
+            now = pygame.time.get_ticks()
+            sound.play(PLAY)
+            if now - trans_start > 500:
+                trans = False
+                main(win)
+        clock.tick(FPS)
+        pygame.display.update()
+
+def controls(win):
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if play_bt.input_check(mouse_pos):
+                    trans = True
+                    trans_start = pygame.time.get_ticks()
+                if control_bt.input_check(mouse_pos):
+                    sound.play(CONFIRM)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    quit()
 
 
 def main(window):
@@ -181,4 +155,4 @@ def main(window):
 
 
 if __name__ == "__main__":
-    main(WINDOW)
+    main_menu(WINDOW)
