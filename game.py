@@ -67,6 +67,7 @@ def main_menu(win):
                     trans_start = pygame.time.get_ticks()
                 if control_bt.input_check(mouse_pos):
                     sound.play(CONFIRM)
+                    controls(win)
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
@@ -82,21 +83,30 @@ def main_menu(win):
         pygame.display.update()
 
 def controls(win):
+    back_bt = Button(win, [300, 280], "BACK", 50, font="assets/Fonts/main.ttf")
+
     while True:
+        mouse_pos = pygame.mouse.get_pos()
+
+        win.fill("black")
+        tutorial_text(win)
+
+        for button in [back_bt]:
+            button.hover(mouse_pos, SELECT)
+            button.draw(win)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if play_bt.input_check(mouse_pos):
-                    trans = True
-                    trans_start = pygame.time.get_ticks()
-                if control_bt.input_check(mouse_pos):
-                    sound.play(CONFIRM)
+                if back_bt.input_check(mouse_pos):
+                    pass
+                    #main_menu(win)
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     quit()
-
+        pygame.display.update()
 
 def main(window):
     global IN_ARENA, PLAYED, SHRIEK_PLAYED

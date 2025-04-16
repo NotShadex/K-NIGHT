@@ -88,17 +88,17 @@ def statistics(win, player, boss, offset_x, offset_y):
     load_font(win, 15, f"DIRECTION: {player.direction}", position=(15, 155))
 
 
-def tutorial_text(win, offset_x, offset_y):
-    """INTRODUCTION for the PLAYER"""
-    load_font(win, 20, "GAME BY SHADEX", position=(300 - offset_x, 730 - offset_y))
-    load_font(win, 15, f"{"FUNCTION":<15}KEY", position=(300 - offset_x, 750 - offset_y))
-    load_font(win, 15, f"{"Movement":<15}AD", position=(300 - offset_x, 765 - offset_y))
-    load_font(win, 15, f"{"Jump":<15}SPACE", position=(300 - offset_x, 780 - offset_y))
-    load_font(win, 15, f"{"Dash":<15}SHIFT", position=(300 - offset_x, 795 - offset_y))
-    load_font(win, 15, f"{"Attack":<15}J", position=(300 - offset_x, 810 - offset_y))
-    load_font(win, 15, f"{"Parry":<15}K", position=(300 - offset_x, 825 - offset_y))
-    load_font(win, 15, f"{"Retry":<15}R", position=(300 - offset_x, 840 - offset_y))
-    load_font(win, 15, f"{"Exit":<15}ESC", position=(300 - offset_x, 855 - offset_y))
+def tutorial_text(win):
+    x = 100 # 1.5x
+    load_font(win, 40, f"CONTROLS", position=(x, 0), font="assets/Fonts/main.ttf")
+    load_font(win, 30, f"{'FUNCTION':<20}KEY", position=(x, 40), font="assets/Fonts/main.ttf")
+    load_font(win, 30, f"{'Movement':<20}AD", position=(x, 60), font="assets/Fonts/main.ttf")
+    load_font(win, 30, f"{'Jump':<20}SPACE", position=(x, 80), font="assets/Fonts/main.ttf")
+    load_font(win, 30, f"{'Dash':<20}SHIFT", position=(x, 100), font="assets/Fonts/main.ttf")
+    load_font(win, 30, f"{'Attack':<20}J", position=(x, 120), font="assets/Fonts/main.ttf")
+    load_font(win, 30, f"{'Parry':<20}K", position=(x, 140), font="assets/Fonts/main.ttf")
+    load_font(win, 30, f"{'Retry':<20}R", position=(x, 160), font="assets/Fonts/main.ttf")
+    load_font(win, 30, f"{'Exit':<20}ESC", position=(x, 180), font="assets/Fonts/main.ttf")
 
 
 def draw(win, player, objects, background, boss, projectiles, hearts, offset_x, offset_y):
