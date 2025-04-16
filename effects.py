@@ -25,6 +25,8 @@ class SoundTimer:
             return True
         return False
 
+    def stop(self, sfx):
+        sfx.stop()
 
 class Shake:
     def __init__(self):

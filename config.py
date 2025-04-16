@@ -1,3 +1,5 @@
+import pygame.mixer
+
 from terrain import *
 from effects import *
 from sprite_cutter import *
@@ -10,7 +12,7 @@ FPS = 60
 PLAYER_VEL = 7
 
 # INITIALIZE DISPLAY
-WINDOW = pygame.display.set_mode((WIDTH, HEIGHT), pygame.SCALED | pygame.FULLSCREEN)  # pygame.SCALED | pygame.FULLSCREEN
+WINDOW = pygame.display.set_mode((WIDTH, HEIGHT),)  # pygame.SCALED | pygame.FULLSCREEN
 pygame.display.set_caption(GAME_TITLE)
 
 # INITIALIZE MIXER
@@ -47,6 +49,10 @@ OBJECTS = get_map(read_csv("new_Tiles.csv"), BLOCK_SIZE)
 # BACKGROUND
 BACKGROUND = get_map(read_csv("new_Background.csv"), BLOCK_SIZE)
 
+
+# MAIN MENU
+SWORD = pygame.image.load(join("assets", "GUI", "try.png"))
+
 # PLAYER INITIAL POSITION
 PLAYER_START_X = 100
 PLAYER_START_Y = 840
@@ -66,11 +72,20 @@ ARENA_POS = 2500
 # MUSIC
 TRACK = pygame.mixer.Sound("assets/Music/sonic.wav")
 
+
+# MAIN MENU
+SELECT = pygame.mixer.Sound("assets/Sound Effects/GUI/select.ogg")
+CONFIRM = pygame.mixer.Sound("assets/Sound Effects/GUI/confirm.ogg")
+PLAY = pygame.mixer.Sound("assets/Sound Effects/GUI/play.ogg")
+RETURN = pygame.mixer.Sound("assets/Sound Effects/GUI/return.ogg")
+
+
 # SOUND EFFECTS
 path = join("assets", "Sound Effects", "")
 DASH = pygame.mixer.Sound(path+"dash.wav")
 JUMP = pygame.mixer.Sound(path+"jump.wav")
 PARRY = pygame.mixer.Sound(path+"parry.wav")
+PARRY_SUCCESS = pygame.mixer.Sound(path+"parry_success.wav")
 HIT1 = pygame.mixer.Sound(path+"hit1.wav")
 HIT2 = pygame.mixer.Sound(path+"hit2.wav")
 BOSS_ATK = pygame.mixer.Sound(path+"boss_atk.wav")

@@ -99,8 +99,11 @@ class Player(pygame.sprite.Sprite):
                 self.health -= 1
                 HURT.play()
             if self.is_parrying and not self.parry_success and self.health != self.MAX_HEALTH:
-                self.health += 1
                 self.parry_success = True
+                PARRY_SUCCESS.play()
+                pygame.time.wait(100)
+                self.health += 1
+
         try:  # Since I set the mask of the projectiles in __init__ to None I have to have a try except block
             for proj in projectiles:
                 if pygame.sprite.collide_mask(self, proj):
@@ -352,7 +355,7 @@ class Player(pygame.sprite.Sprite):
         self.update_sprite(fps)
 
     def draw(self, win, offset_x, offset_y):
-        if (self.is_invincible and randint(0, 1) == 1) and not self.is_attacking and not self.dead and not self.is_parrying and not self.is_dashing:
+        if (self.is_invincible and randint(0, 2) == 1) and not self.is_attacking and not self.dead and not self.is_parrying and not self.is_dashing:
             return
         self.draw_afterimage(win, offset_x, offset_y)
         win.blit(self.sprite, (self.rect.x - offset_x, self.rect.y - offset_y))
