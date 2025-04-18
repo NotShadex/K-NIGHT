@@ -1,8 +1,7 @@
-import time
-
 from boss import *
 from player import *
 from interface import *
+"""THIS IS WHERE YOU RUN THE GAME just execute game.py"""
 
 
 def update_all_methods(player, objects, boss, projectiles, camera, fps):
@@ -36,6 +35,7 @@ def update_all_methods(player, objects, boss, projectiles, camera, fps):
 
 
 def main_menu(win):
+    """Basically not much coding at all just style and messing with numbers :/"""
     clock = pygame.time.Clock()
     trans = False
     trans_start = None
@@ -54,7 +54,7 @@ def main_menu(win):
                 button.hover(mouse_pos, SELECT)
                 button.draw(win)
         else:
-            win.fill((130, 0, 0))
+            win.fill("black")
             size = pygame.transform.smoothscale_by(SWORD, 0.25)
             win.blit(size, (center_image(size)[0] + 7, center_image(size)[1] - 50))
 
@@ -72,19 +72,20 @@ def main_menu(win):
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     quit()
-
+        # ChatGPT pomagal pri tranziciji z ticki, ki jih še nisem uporabljal do zdej
         if trans:
             now = pygame.time.get_ticks()
             sound.play(PLAY)
-            if now - trans_start > 500:
+            if now - trans_start > 800:
                 trans = False
                 main(win)
         clock.tick(FPS)
         pygame.display.update()
 
-def controls(win):
-    back_bt = Button(win, [300, 280], "BACK", 50, font="assets/Fonts/main.ttf")
 
+def controls(win):
+    back_bt = Button(win, [300, 310], "BACK", 50, font="assets/Fonts/main.ttf")
+    sound = SoundTimer(2)
     while True:
         mouse_pos = pygame.mouse.get_pos()
 
@@ -100,13 +101,14 @@ def controls(win):
                 pygame.quit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if back_bt.input_check(mouse_pos):
-                    pass
-                    #main_menu(win)
+                    sound.play(CONFIRM)
+                    main_menu(win)
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     quit()
         pygame.display.update()
+
 
 def main(window):
     global IN_ARENA, PLAYED, SHRIEK_PLAYED
@@ -145,9 +147,10 @@ def main(window):
                     main(window)
 
         update_all_methods(player, objects, boss, projectiles, camera, FPS)
-        window.fill((25, 20, 36))
+        window.fill((25, 20, 36))  # Background colour
         clock.tick(FPS)
 
+        # To je koda iz tutoriala od Tech with Tim (da se vam ne bo zdelo sumljivo)
         if ((player.rect.right - offset_x >= WIDTH - SCROLL_AREA_WIDTH) and player.vel_x > 0) or ((player.rect.left - offset_x <= SCROLL_AREA_WIDTH) and player.vel_x < 0):
             offset_x += player.vel_x
 
@@ -156,6 +159,7 @@ def main(window):
             offset_y += (target_offset_y - offset_y) // 2
 
         # Variable shake_x and shake_y just move the offset temporarily
+        # (SPOMNIL SE CHATGPT; imel sem probleme ker se offset ni vrnil nazaj na og. value zato je screen šel preveč gor)
         shake_x, shake_y = camera.apply_shake(offset_x, offset_y)
 
         draw(window, player, objects, background, boss, projectiles, hearts, shake_x, shake_y)

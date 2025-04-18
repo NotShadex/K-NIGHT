@@ -111,7 +111,7 @@ class Boss:
 
     def update_dash(self):
         if self.is_dashing:
-            if randint(0, 3) == 1:  # Less afterimages for performance
+            if randint(0, 5) == 1:  # Less afterimages for performance
                 self.add_afterimage()
             if time.time() >= self.dash_end_time:
                 self.is_dashing = False
@@ -172,7 +172,7 @@ class Boss:
 
     def move_to_player(self, player, projectiles):
         # If the boss is enraged ignore movement and attack options
-        if 10 <= self.health <= self.RAGE_PERCENTAGE:
+        if 10 < self.health <= self.RAGE_PERCENTAGE:
             camera.trigger_shake(shake_intensity=3, duration=5)
             self.add_projectile(projectiles)
             self.is_enraged = True
@@ -264,6 +264,7 @@ class Projectile:
 
     def move_to_player(self, player):
         if self.is_following:
+            # To mi je pomagal chat-gpt za bolj 'smooth' movement na premikanju do igralca
             dx = player.rect.centerx - self.rect.centerx
             dy = player.rect.centery - self.rect.centery
 
@@ -311,7 +312,7 @@ class Spawner:
     def update_sprite(self):
         sprites = self.SPRITES["spawner"]
         sprite_index = (self.animation_count // self.ANIMATION_DELAY) % len(sprites)
-        if sprite_index < 14:
+        if sprite_index < 14:  # Stops at index 14 so it looks cool!
             self.sprite = sprites[sprite_index]
             self.animation_count += 1
 

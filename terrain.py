@@ -1,6 +1,7 @@
 import pygame
 import csv
 from os.path import join
+"""Ta koda je bila tudi kopirana od Tech with Tim, seveda sem jo prilagodil svojim potrebam"""
 
 
 class Object(pygame.sprite.Sprite):

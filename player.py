@@ -1,4 +1,9 @@
 from config import *
+"""Večina kode je od Tech with Tim.
+   Tiste dele, ko vidite start_attack in update_attack, ko se uporabi time,
+   mi je chat-gpt zgeneriral tisto strukturo in za vse druge sem uporabil to isto strukturo,
+   ki je tudi prisotna pri boss.py, pri dash mi je tudi pomagal z risanjem 'afterimaga' od igralca
+   Gravity, kot sem omenil v dokumentaciji sem prilagodil iz videa od Pefeper"""
 
 
 class Player(pygame.sprite.Sprite):

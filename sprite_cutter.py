@@ -1,6 +1,7 @@
 from config import pygame
 from os import listdir
 from os.path import isfile, join
+"""Koda tukaj je bila kopirana iz tutoriala od Tech with Tim"""
 
 
 # Flips all the sprites from left to right at least those requiring being flipped
