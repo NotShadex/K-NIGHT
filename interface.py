@@ -1,20 +1,19 @@
 from config import *
+"""THIS ARE GENERALLY FUNCTIONS FOR THE MAIN MENU, GUI AND DRAWING OF CLASSES"""
 
 
 class Button:
-    def __init__(self, win, pos, text_input, size, bg_image=None, color=(255, 255, 255), hover_color=(255, 0, 0), font="assets/Fonts/pixel.ttf"):
+    """Ta class je prilagojen iz videa od baraltech"""
+    def __init__(self, win, pos, text_input, size, color=(255, 255, 255), hover_color=(255, 0, 0), font="assets/Fonts/pixel.ttf"):
         self.font = pygame.font.Font(font, size)
         self.text_input = text_input
         self.color, self.hover_cl = color, hover_color
         self.text = self.font.render(self.text_input, False, self.color)
-        self.bg_image = self.text if bg_image is None else bg_image
-        self.rect = self.bg_image.get_rect(center=(pos[0], pos[1]))
+        self.rect = self.text.get_rect(center=(pos[0], pos[1]))
         self.text_rect = self.text.get_rect(center=(pos[0], pos[1]))
         self.hovered = False
 
     def draw(self, win):
-        if self.bg_image is not None:
-            win.blit(self.bg_image, self.rect)
         win.blit(self.text, self.text_rect)
 
     def input_check(self, mouse_position):
@@ -34,6 +33,7 @@ class Button:
 
 
 def center_image(image):
+    """Just for convenience"""
     image_width, image_height = image.get_size()
     x = (WIDTH - image_width) // 2
     y = (HEIGHT - image_height) // 2
@@ -49,7 +49,6 @@ def load_font(win, size, text, color=(255, 255, 255), position=(100, 100), cente
         text_width, text_height = text_surface.get_size()
         x = (WIDTH - text_width) // 2
         y = (HEIGHT - text_height) // 2
-        print(x, y)
         win.blit(text_surface, (x, y))
     else:
         win.blit(text_surface, position)
@@ -64,6 +63,7 @@ def draw_health_bar(win, player, images):
 
     for i in range(player.MAX_HEALTH):
         heart_shake.update_shake()
+        # If the player has taken damage applies shake to the hearts (player is also invincible when attacking we don't want shaking of the hearts when attacking)
         if player.is_invincible and not player.is_attacking and not player.is_dashing and not player.is_parrying:
             heart_shake.trigger_shake(shake_intensity=2, duration=5)
         elif player.health == 1:
@@ -89,16 +89,17 @@ def statistics(win, player, boss, offset_x, offset_y):
 
 
 def tutorial_text(win):
-    x = 100 # 1.5x
-    load_font(win, 40, f"CONTROLS", position=(x, 0), font="assets/Fonts/main.ttf")
-    load_font(win, 30, f"{'FUNCTION':<20}KEY", position=(x, 40), font="assets/Fonts/main.ttf")
-    load_font(win, 30, f"{'Movement':<20}AD", position=(x, 60), font="assets/Fonts/main.ttf")
-    load_font(win, 30, f"{'Jump':<20}SPACE", position=(x, 80), font="assets/Fonts/main.ttf")
-    load_font(win, 30, f"{'Dash':<20}SHIFT", position=(x, 100), font="assets/Fonts/main.ttf")
-    load_font(win, 30, f"{'Attack':<20}J", position=(x, 120), font="assets/Fonts/main.ttf")
-    load_font(win, 30, f"{'Parry':<20}K", position=(x, 140), font="assets/Fonts/main.ttf")
-    load_font(win, 30, f"{'Retry':<20}R", position=(x, 160), font="assets/Fonts/main.ttf")
-    load_font(win, 30, f"{'Exit':<20}ESC", position=(x, 180), font="assets/Fonts/main.ttf")
+    """For the control menu"""
+    x = 150
+    load_font(win, 40, f"CONTROLS", position=(230, 0), font="assets/Fonts/main.ttf")
+    load_font(win, 25, f"{'FUNCTION':<20}KEY", position=(x, 40), font="assets/Fonts/main.ttf")
+    load_font(win, 25, f"{'Movement':<20}AD", position=(x, 70), font="assets/Fonts/main.ttf")
+    load_font(win, 25, f"{'Jump':<20}SPACE", position=(x, 100), font="assets/Fonts/main.ttf")
+    load_font(win, 25, f"{'Dash':<20}SHIFT", position=(x, 130), font="assets/Fonts/main.ttf")
+    load_font(win, 25, f"{'Attack':<20}J", position=(x, 160), font="assets/Fonts/main.ttf")
+    load_font(win, 25, f"{'Parry':<20}K", position=(x, 190), font="assets/Fonts/main.ttf")
+    load_font(win, 25, f"{'Retry':<20}R", position=(x, 220), font="assets/Fonts/main.ttf")
+    load_font(win, 25, f"{'Exit':<20}ESC", position=(x, 250), font="assets/Fonts/main.ttf")
 
 
 def draw(win, player, objects, background, boss, projectiles, hearts, offset_x, offset_y):
@@ -125,6 +126,7 @@ def draw(win, player, objects, background, boss, projectiles, hearts, offset_x, 
         if not PLAYED:
             DEATH.play()
             PLAYED = True
+        # Ta block code od boss_mask in player_mask je velikokrat uporabljen zgeneriral mi ga je chatgpt uporabljen za obarvanje
         boss_mask = boss.mask.to_surface(setcolor=(255, 0, 0, 255), unsetcolor=(0, 0, 0, 0))
         player_mask = player.mask.to_surface(setcolor=(130, 0, 0, 255), unsetcolor=(0, 0, 0, 0))
         win.fill("black")
@@ -133,3 +135,5 @@ def draw(win, player, objects, background, boss, projectiles, hearts, offset_x, 
         win.blit(boss_mask, (boss.rect.x - offset_x, boss.rect.y - offset_y))
         win.blit(player_mask, (player.rect.x - offset_x, player.rect.y - offset_y))
     pygame.display.update()
+
+
